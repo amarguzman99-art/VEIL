@@ -1,18 +1,1 @@
-{
-  "expo": {
-    "name": "VELO",
-    "slug": "velo-app",
-    "version": "1.0.0",
-    "orientation": "portrait",
-    "icon": "./assets/icon.png",
-    "ios": {
-      "bundleIdentifier": "com.amarguzman.velo",
-      "supportsTablet": true
-    },
-    "extra": {
-      "eas": {
-        "projectId": "7343e0d8-1425-4279-8808-7243e866a9d4"
-      }
-    }
-  }
-}
+
