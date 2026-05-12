@@ -25,7 +25,7 @@ export default function Register() {
     try {
       const res = await register({ email, password, name, age: ageNum, bio });
       await saveAuth(res.access_token, res.user);
-      router.replace('/(tabs)/grid');
+      router.replace('/onboarding');
     } catch (e: any) {
       Alert.alert('Error', e?.response?.data?.detail || 'No se pudo registrar');
     } finally { setLoading(false); }

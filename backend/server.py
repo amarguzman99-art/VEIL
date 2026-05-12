@@ -48,8 +48,10 @@ class ProfileUpdate(BaseModel):
     photo: Optional[str] = None
     photos: Optional[List[str]] = None
     interests: Optional[List[str]] = None
+    prompts: Optional[List[dict]] = None  # [{question, answer}]
     latitude: Optional[float] = None
     longitude: Optional[float] = None
+    onboarded: Optional[bool] = None
 
 class TokenResponse(BaseModel):
     access_token: str
@@ -131,9 +133,12 @@ def user_to_public(u: dict, viewer: Optional[dict] = None) -> dict:
         "photo": u.get("photo"),
         "photos": u.get("photos", []),
         "interests": u.get("interests", []),
+        "prompts": u.get("prompts", []),
+        "verified": u.get("verified", False),
         "distance_km": dist,
         "is_premium": u.get("is_premium", False),
         "is_online": online,
+        "onboarded": u.get("onboarded", False),
         "is_boosted": bool(u.get("boost_until") and datetime.fromisoformat(u["boost_until"].replace('Z','+00:00')) > now if u.get("boost_until") else False),
     }
 
@@ -232,6 +237,27 @@ async def nearby(current=Depends(get_current_user)):
         x["distance_km"] if x["distance_km"] is not None else 9999
     ))
     return results
+
+
+@api_router.get("/users/daily-picks")
+async def daily_picks_endpoint(current=Depends(get_current_user)):
+    """3 curated users for today based on common interests + photo + verified."""
+    my_interests = set(current.get("interests", []))
+    blocked = set(current.get("blocked", []))
+    cursor = db.users.find({
+        "id": {"$ne": current["id"], "$nin": list(blocked)},
+        "photo": {"$ne": None}
+    }, {"_id": 0, "password_hash": 0, "email": 0})
+    all_users = await cursor.to_list(200)
+    scored = []
+    for u in all_users:
+        u_interests = set(u.get("interests", []))
+        score = len(my_interests & u_interests) * 3
+        if u.get("verified"): score += 2
+        if u.get("is_boosted"): score += 1
+        scored.append((score, u))
+    scored.sort(key=lambda x: x[0], reverse=True)
+    return [user_to_public(u, current) for _, u in scored[:3]]
 
 
 @api_router.get("/users/{user_id}")
@@ -333,7 +359,29 @@ async def send_tap(data: TapCreate, current=Depends(get_current_user)):
     }
     await db.taps.insert_one(tap)
     tap.pop("_id", None)
-    return tap
+    # Detect mutual match: did the target also tap me back?
+    reciprocal = await db.taps.find_one({
+        "from_user_id": data.to_user_id,
+        "to_user_id": current["id"]
+    })
+    is_match = reciprocal is not None
+    return {**tap, "is_match": is_match}
+
+
+@api_router.get("/matches")
+async def get_matches(current=Depends(get_current_user)):
+    """Mutual taps = matches. Returns users I tapped AND tapped me back."""
+    uid = current["id"]
+    sent = await db.taps.find({"from_user_id": uid}, {"_id": 0, "to_user_id": 1}).to_list(500)
+    sent_ids = set(t["to_user_id"] for t in sent)
+    received = await db.taps.find({"to_user_id": uid}, {"_id": 0, "from_user_id": 1}).to_list(500)
+    received_ids = set(t["from_user_id"] for t in received)
+    match_ids = sent_ids & received_ids
+    result = []
+    for mid in match_ids:
+        u = await db.users.find_one({"id": mid}, {"_id": 0, "password_hash": 0, "email": 0})
+        if u: result.append(user_to_public(u, current))
+    return result
 
 
 @api_router.get("/taps/received")
@@ -409,6 +457,17 @@ DEMO_USERS = [
     {"name": "Eduardo", "age": 31, "bio": "Profesional del marketing. Creativo.", "photo": "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=600", "interests": ["💡 Ideas", "📈 Crecer", "🌃 Salir"]},
 ]
 
+DEMO_PROMPTS_POOL = [
+    {"q": "Detrás de mi velo hay...", "a": "más curiosidad de la que aparento"},
+    {"q": "Mi cita ideal sería...", "a": "una cena lenta y conversación que no termine"},
+    {"q": "Lo que me hace reír...", "a": "el humor inteligente y un poco oscuro"},
+    {"q": "Mi guilty pleasure...", "a": "reggaetón a las 3am en mi cocina"},
+    {"q": "Lo más romántico que he hecho...", "a": "una carta a mano"},
+    {"q": "Domingo perfecto...", "a": "brunch, mercadillo y siesta abrazado"},
+    {"q": "Banderas verdes...", "a": "se hace responsable de sus emociones"},
+    {"q": "Antes de morir quiero...", "a": "vivir un mes en Tokio"},
+]
+
 @api_router.post("/seed")
 async def seed_demo_users():
     count = await db.users.count_documents({"email": {"$regex": "^demo"}})
@@ -453,19 +512,31 @@ async def seed_demo_users():
             last_active = (now - timedelta(minutes=minutes_ago)).isoformat()
             is_boosted = random.random() < 0.15
             boost_until = (now + timedelta(minutes=random.randint(5, 55))).isoformat() if is_boosted else None
+            user_prompts = random.sample(DEMO_PROMPTS_POOL, k=random.randint(2, 3))
             await db.users.insert_one({
                 "id": str(uuid.uuid4()),
                 "email": email, "password_hash": hash_pw("DemoPass123"),
                 "name": d["name"], "age": d["age"], "bio": d["bio"],
                 "photo": d["photo"], "photos": [d["photo"]],
                 "interests": d["interests"],
+                "prompts": user_prompts,
+                "verified": random.random() < 0.5,
                 "latitude": lat, "longitude": lon,
                 "is_premium": random.random() < 0.2,
                 "blocked": [], "boost_until": boost_until,
                 "last_active": last_active,
+                "onboarded": True,
                 "created_at": now.isoformat(),
             })
             inserted += 1
+
+    # Backfill prompts/verified on existing demo users that don't have them
+    async for u in db.users.find({"email": {"$regex": "^demo"}, "prompts": {"$exists": False}}):
+        await db.users.update_one({"id": u["id"]}, {"$set": {
+            "prompts": random.sample(DEMO_PROMPTS_POOL, k=random.randint(2, 3)),
+            "verified": random.random() < 0.5,
+            "onboarded": True,
+        }})
 
     # Auto-generate 10 received TAPs for review account if it has none (for App Review UX demo)
     review_taps = await db.taps.count_documents({"to_user_id": review_uid})

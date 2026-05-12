@@ -9,6 +9,21 @@ import { theme, me, updateProfile, clearAuth, deleteAccount } from '../../src/ap
 const { width } = Dimensions.get('window');
 const PHOTO_SIZE = (width - 40 - 16) / 3;
 
+const PROMPTS_POOL = [
+  'Detrás de mi velo hay...',
+  'Mi cita ideal sería...',
+  'Lo que me hace reír...',
+  'Mi guilty pleasure...',
+  'Lo más romántico que he hecho...',
+  'Me obsesiona ahora...',
+  'Si fueras una canción serías...',
+  'Mi señal de que eres tú...',
+  'Domingo perfecto...',
+  'Algo que admiras...',
+  'Banderas verdes...',
+  'Antes de morir quiero...',
+];
+
 const INTEREST_GROUPS = [
   { title: 'Estilo de vida', items: ['☕ Café', '🍷 Vinos', '🥃 Cócteles', '🍽️ Cocina', '🌱 Vegano', '💪 Gym', '🏃 Running', '🧘 Yoga', '🚴 Ciclismo', '🏊 Natación', '⚽ Fútbol', '🎾 Tenis', '🥊 Boxeo'] },
   { title: 'Cultura', items: ['📖 Libros', '🎬 Cine', '🎭 Teatro', '🎨 Arte', '📐 Diseño', '🏛️ Museos', '📷 Foto', '📺 Series', '📰 Noticias', '🎙️ Podcasts'] },
@@ -26,6 +41,7 @@ export default function Profile() {
   const [name, setName] = useState('');
   const [bio, setBio] = useState('');
   const [interests, setInterests] = useState<string[]>([]);
+  const [prompts, setPrompts] = useState<any[]>([]);
   const [photos, setPhotos] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const router = useRouter();
@@ -33,7 +49,9 @@ export default function Profile() {
   useFocusEffect(useCallback(() => {
     (async () => {
       const u = await me();
-      setUser(u); setName(u.name); setBio(u.bio); setInterests(u.interests || []); setPhotos(u.photos || []);
+      setUser(u); setName(u.name); setBio(u.bio);
+      setInterests(u.interests || []); setPhotos(u.photos || []);
+      setPrompts(u.prompts || []);
     })();
   }, []));
 
@@ -59,12 +77,38 @@ export default function Profile() {
     setSaving(true);
     try {
       const cleanPhotos = photos.filter(Boolean).slice(0, 6);
-      const updated = await updateProfile({ name, bio, interests, photos: cleanPhotos });
+      const cleanPrompts = prompts.filter(p => p.q && p.a).slice(0, 3);
+      const updated = await updateProfile({ name, bio, interests, photos: cleanPhotos, prompts: cleanPrompts });
       setUser({ ...user, ...updated });
       setEditing(false);
     } catch (e: any) { Alert.alert('Error', e?.response?.data?.detail || 'No se pudo guardar'); }
     setSaving(false);
   };
+
+  const setPromptQ = (idx: number, q: string) => {
+    const next = [...prompts];
+    if (!next[idx]) next[idx] = { q: '', a: '' };
+    next[idx] = { ...next[idx], q };
+    setPrompts(next);
+  };
+  const setPromptA = (idx: number, a: string) => {
+    const next = [...prompts];
+    if (!next[idx]) next[idx] = { q: '', a: '' };
+    next[idx] = { ...next[idx], a };
+    setPrompts(next);
+  };
+  const removePrompt = (idx: number) => setPrompts(prompts.filter((_, i) => i !== idx));
+
+  // Completion meter
+  const completion = (() => {
+    let score = 30; // base for having account
+    if (user?.photo) score += 15;
+    if (photos.length >= 3) score += 15;
+    if (bio?.length >= 30) score += 10;
+    if (interests?.length >= 3) score += 15;
+    if (prompts?.filter((p: any) => p.q && p.a).length >= 2) score += 15;
+    return Math.min(100, score);
+  })();
 
   const toggleInterest = (i: string) => {
     setInterests(interests.includes(i) ? interests.filter(x => x !== i) : [...interests, i].slice(0, 12));
@@ -154,6 +198,46 @@ export default function Profile() {
                   </View>
                 </View>
               ))}
+
+              <Text style={styles.label}>RESPUESTAS ({prompts.filter(p=>p.q&&p.a).length}/3)</Text>
+              <Text style={[styles.groupLabel, { marginBottom: 10 }]}>Comparte 3 destellos de quién eres</Text>
+              {[0, 1, 2].map(idx => {
+                const p = prompts[idx] || { q: '', a: '' };
+                return (
+                  <View key={idx} style={styles.promptEditor}>
+                    <TouchableOpacity
+                      style={styles.promptQuestionBtn}
+                      onPress={() => {
+                        Alert.alert('Elige una pregunta', '', PROMPTS_POOL.map(pq => ({
+                          text: pq, onPress: () => setPromptQ(idx, pq)
+                        })).concat([{ text: 'Cancelar', style: 'cancel' } as any]));
+                      }}
+                    >
+                      <Text style={p.q ? styles.promptQText : styles.promptQPlaceholder}>
+                        {p.q || 'Elige una pregunta...'}
+                      </Text>
+                      <Ionicons name="chevron-down" size={16} color={theme.textSecondary} />
+                    </TouchableOpacity>
+                    {p.q && (
+                      <View style={{ position: 'relative' }}>
+                        <TextInput
+                          testID={`prompt-answer-${idx}`}
+                          style={styles.promptAnswer}
+                          value={p.a}
+                          onChangeText={(t) => setPromptA(idx, t)}
+                          placeholder="Tu respuesta..."
+                          placeholderTextColor={theme.textSecondary}
+                          maxLength={120}
+                          multiline
+                        />
+                        <TouchableOpacity style={styles.promptClear} onPress={() => removePrompt(idx)}>
+                          <Ionicons name="close-circle" size={18} color={theme.textSecondary} />
+                        </TouchableOpacity>
+                      </View>
+                    )}
+                  </View>
+                );
+              })}
               <View style={{ flexDirection: 'row', gap: 12, marginTop: 16 }}>
                 <TouchableOpacity style={[styles.btnGhost, { flex: 1 }]} onPress={() => { setEditing(false); setPhotos(user.photos || []); setName(user.name); setBio(user.bio); setInterests(user.interests || []); }}>
                   <Text style={styles.btnGhostText}>Cancelar</Text>
@@ -168,8 +252,32 @@ export default function Profile() {
               <View style={styles.avatarWrap}>
                 {displayPhoto ? <Image source={{ uri: displayPhoto }} style={styles.avatar} /> : <View style={[styles.avatar, { backgroundColor: theme.surface2, alignItems: 'center', justifyContent: 'center' }]}><Ionicons name="person" size={48} color={theme.textSecondary} /></View>}
               </View>
-              <Text style={styles.name}>{user.name}, {user.age}</Text>
+              <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8 }}>
+                <Text style={styles.name}>{user.name}, {user.age}</Text>
+                {user.verified && <Ionicons name="checkmark-circle" size={20} color={theme.blueArrow} />}
+              </View>
               {user.bio ? <Text style={styles.bio}>{user.bio}</Text> : <Text style={[styles.bio, { fontStyle: 'italic' }]}>Sin descripción aún.</Text>}
+
+              {/* Completion meter */}
+              <View style={styles.meterWrap}>
+                <View style={styles.meterHeader}>
+                  <Text style={styles.meterLabel}>Tu velo está al</Text>
+                  <Text style={styles.meterValue}>{completion}%</Text>
+                </View>
+                <View style={styles.meterBar}>
+                  <View style={[styles.meterFill, { width: `${completion}%` }]} />
+                </View>
+                {completion < 100 && (
+                  <Text style={styles.meterTip}>
+                    {!user.photo ? '✦ Añade una foto principal' :
+                     photos.length < 3 ? '✦ Añade más fotos para destacar' :
+                     interests.length < 3 ? '✦ Añade intereses' :
+                     prompts.filter(p => p.q && p.a).length < 2 ? '✦ Responde a alguna pregunta' :
+                     '✦ Casi perfecto'}
+                  </Text>
+                )}
+              </View>
+
               {photos.length > 1 && (
                 <View style={styles.photoStripWrap}>
                   <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingHorizontal: 4 }}>
@@ -179,6 +287,18 @@ export default function Profile() {
                   </ScrollView>
                 </View>
               )}
+
+              {prompts.filter(p => p.q && p.a).length > 0 && (
+                <View style={{ marginTop: 16 }}>
+                  {prompts.filter(p => p.q && p.a).map((p, i) => (
+                    <View key={i} style={styles.promptDisplay}>
+                      <Text style={styles.promptDispQ}>{p.q}</Text>
+                      <Text style={styles.promptDispA}>{p.a}</Text>
+                    </View>
+                  ))}
+                </View>
+              )}
+
               {interests.length > 0 && (
                 <View style={[styles.tags, { marginTop: 16 }]}>
                   {interests.map(i => <View key={i} style={styles.tag}><Text style={styles.tagText}>{i}</Text></View>)}
@@ -265,4 +385,20 @@ const styles = StyleSheet.create({
   menu: { marginHorizontal: 16, marginTop: 24, backgroundColor: theme.surface1, borderRadius: 16, overflow: 'hidden' },
   menuItem: { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 16, borderBottomWidth: 1, borderBottomColor: theme.border },
   menuText: { color: theme.textPrimary, fontSize: 15, flex: 1 },
+  meterWrap: { marginTop: 18, paddingHorizontal: 6 },
+  meterHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
+  meterLabel: { color: theme.textSecondary, fontSize: 12 },
+  meterValue: { color: theme.cream, fontSize: 14, fontWeight: '700' },
+  meterBar: { height: 5, backgroundColor: theme.surface2, borderRadius: 999, overflow: 'hidden' },
+  meterFill: { height: 5, backgroundColor: theme.cream, borderRadius: 999 },
+  meterTip: { color: theme.textSecondary, fontSize: 11, marginTop: 6, textAlign: 'center' },
+  promptDisplay: { backgroundColor: theme.surface2, borderRadius: 14, padding: 14, marginBottom: 10, borderLeftWidth: 3, borderLeftColor: theme.cream },
+  promptDispQ: { color: theme.textSecondary, fontSize: 11, fontWeight: '600', marginBottom: 5, letterSpacing: 0.3 },
+  promptDispA: { color: theme.textPrimary, fontSize: 15, lineHeight: 22, fontStyle: 'italic' },
+  promptEditor: { marginBottom: 12 },
+  promptQuestionBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: theme.surface2, borderRadius: 12, padding: 12, borderWidth: 1, borderColor: theme.border },
+  promptQText: { color: theme.textPrimary, fontSize: 13, fontWeight: '500', flex: 1 },
+  promptQPlaceholder: { color: theme.textSecondary, fontSize: 13, fontStyle: 'italic' },
+  promptAnswer: { backgroundColor: theme.surface2, borderRadius: 12, padding: 12, marginTop: 6, color: theme.textPrimary, fontSize: 14, lineHeight: 20, minHeight: 60, textAlignVertical: 'top', borderLeftWidth: 2, borderLeftColor: theme.cream },
+  promptClear: { position: 'absolute', top: 12, right: 10 },
 });

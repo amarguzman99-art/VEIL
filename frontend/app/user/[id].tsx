@@ -75,7 +75,10 @@ export default function UserDetail() {
           </SafeAreaView>
         </View>
         <View style={styles.content}>
-          <Text style={styles.name}>{user.name}, {user.age}</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            <Text style={styles.name}>{user.name}, {user.age}</Text>
+            {user.verified && <Ionicons name="checkmark-circle" size={22} color={theme.blueArrow} />}
+          </View>
           {user.distance_km !== null && (
             <View style={styles.distRow}>
               <Ionicons name="location" size={14} color={theme.warm} />
@@ -83,6 +86,19 @@ export default function UserDetail() {
             </View>
           )}
           {user.bio ? <Text style={styles.bio}>{user.bio}</Text> : null}
+
+          {user.prompts?.length > 0 && (
+            <>
+              <Text style={styles.section}>SUS RESPUESTAS</Text>
+              {user.prompts.map((p: any, i: number) => (
+                <View key={i} style={styles.promptCard}>
+                  <Text style={styles.promptQ}>{p.q}</Text>
+                  <Text style={styles.promptA}>{p.a}</Text>
+                </View>
+              ))}
+            </>
+          )}
+
           {user.interests?.length > 0 && (
             <>
               <Text style={styles.section}>INTERESES</Text>
@@ -122,6 +138,9 @@ const styles = StyleSheet.create({
   tags: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   tag: { backgroundColor: theme.surface1, borderRadius: 999, paddingVertical: 8, paddingHorizontal: 14, borderWidth: 1, borderColor: theme.border },
   tagText: { color: theme.textPrimary, fontSize: 14 },
+  promptCard: { backgroundColor: theme.surface1, borderRadius: 14, padding: 16, marginBottom: 10, borderLeftWidth: 3, borderLeftColor: theme.cream },
+  promptQ: { color: theme.textSecondary, fontSize: 12, fontWeight: '600', marginBottom: 6, letterSpacing: 0.3 },
+  promptA: { color: theme.textPrimary, fontSize: 16, lineHeight: 22, fontStyle: 'italic' },
   bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 20, paddingBottom: 32, flexDirection: 'row', gap: 12, backgroundColor: theme.bg, borderTopWidth: 1, borderTopColor: theme.border },
   chatBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, backgroundColor: theme.warm, paddingVertical: 16, borderRadius: 24 },
   chatBtnText: { color: theme.warmText, fontSize: 16, fontWeight: '600' },

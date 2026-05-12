@@ -40,6 +40,18 @@ export default function ChatDetail() {
     } catch {}
   };
 
+  const useIcebreaker = (txt: string) => { setText(txt); };
+
+  const ICEBREAKERS = other?.interests?.length > 0 ? [
+    `Hola 👋 He visto que te gusta ${other.interests[0].split(' ').slice(1).join(' ')}, ¿cuál es tu favorito?`,
+    `Cuéntame, ¿qué te trae a VEIL?`,
+    `Si pudieras quedar este finde, ¿qué plan propones?`,
+  ] : [
+    `Hola 👋 ¿Qué tal el día?`,
+    `Cuéntame, ¿qué te trae a VEIL?`,
+    `Si pudieras quedar este finde, ¿qué plan propones?`,
+  ];
+
   if (loading) return <View style={styles.container}><ActivityIndicator color={theme.warm} style={{ marginTop: 100 }} /></View>;
 
   return (
@@ -77,8 +89,20 @@ export default function ChatDetail() {
           );
         }}
         ListEmptyComponent={
-          <View style={{ alignItems: 'center', marginTop: 60 }}>
-            <Text style={{ color: theme.textSecondary }}>Rompe el hielo. Sé tú mismo.</Text>
+          <View style={{ alignItems: 'center', marginTop: 40, paddingHorizontal: 24 }}>
+            <View style={styles.emptyIcon}>
+              <Ionicons name="chatbubble-ellipses-outline" size={36} color={theme.cream} />
+            </View>
+            <Text style={styles.emptyTitle}>Rompe el hielo</Text>
+            <Text style={styles.emptySub}>Sé tú mismo. Aquí van algunas ideas para empezar:</Text>
+            <View style={{ gap: 8, marginTop: 16, width: '100%' }}>
+              {ICEBREAKERS.map((ice, i) => (
+                <TouchableOpacity key={i} style={styles.iceCard} onPress={() => useIcebreaker(ice)} activeOpacity={0.7}>
+                  <Ionicons name="sparkles" size={14} color={theme.cream} />
+                  <Text style={styles.iceText}>{ice}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
           </View>
         }
       />
@@ -118,4 +142,9 @@ const styles = StyleSheet.create({
   inputBar: { flexDirection: 'row', alignItems: 'flex-end', gap: 10, padding: 12, paddingBottom: Platform.OS === 'ios' ? 28 : 12, borderTopWidth: 1, borderTopColor: theme.border, backgroundColor: theme.surface1 },
   input: { flex: 1, backgroundColor: theme.surface2, borderRadius: 22, paddingHorizontal: 16, paddingVertical: 10, color: theme.textPrimary, fontSize: 15, maxHeight: 120 },
   sendBtn: { width: 44, height: 44, borderRadius: 999, backgroundColor: theme.warm, alignItems: 'center', justifyContent: 'center' },
+  emptyIcon: { width: 80, height: 80, borderRadius: 999, backgroundColor: 'rgba(232,217,184,0.10)', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(232,217,184,0.30)', marginBottom: 18 },
+  emptyTitle: { color: theme.textPrimary, fontSize: 22, fontWeight: '400', letterSpacing: -0.5 },
+  emptySub: { color: theme.textSecondary, fontSize: 14, marginTop: 6, textAlign: 'center', lineHeight: 20 },
+  iceCard: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: theme.surface1, padding: 14, borderRadius: 14, borderWidth: 1, borderColor: theme.border },
+  iceText: { color: theme.textPrimary, fontSize: 13, flex: 1, lineHeight: 18 },
 });

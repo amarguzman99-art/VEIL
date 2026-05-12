@@ -64,6 +64,8 @@ export const reportUser = (target_user_id: string, reason: string) =>
 
 export const tapsCount = () => api.get('/taps/count').then(r => r.data);
 export const activateBoost = () => api.post('/boost/activate').then(r => r.data);
+export const getMatches = () => api.get('/matches').then(r => r.data);
+export const dailyPicks = () => api.get('/users/daily-picks').then(r => r.data);
 
 export const seed = () => api.post('/seed').then(r => r.data);
 

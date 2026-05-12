@@ -36,8 +36,13 @@ export default function TapZone() {
   const handleTap = async (userId: string, type: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     try {
-      await sendTap(userId, type);
-      Alert.alert('✓ TAP enviado', 'Hemos lanzado tu señal. Si responde, lo sabrás.');
+      const res = await sendTap(userId, type);
+      if (res.is_match) {
+        const target = users.find((u: any) => u.id === userId);
+        router.push({ pathname: '/match', params: { name: target?.name || '', photo: target?.photo || '', userId } });
+      } else {
+        Alert.alert('✓ TAP enviado', 'Hemos lanzado tu señal. Si responde, lo sabrás.');
+      }
     } catch (e: any) {
       Alert.alert('Error', e?.response?.data?.detail || 'Intenta de nuevo');
     }

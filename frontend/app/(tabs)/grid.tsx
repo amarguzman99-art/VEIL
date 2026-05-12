@@ -4,7 +4,7 @@ import { useRouter, useFocusEffect } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { theme, getNearby, tapsCount } from '../../src/api';
+import { theme, getNearby, tapsCount, dailyPicks } from '../../src/api';
 
 const { width } = Dimensions.get('window');
 const COLS = 3;
@@ -13,6 +13,7 @@ const CARD_W = (width - GAP * (COLS + 1)) / COLS;
 
 export default function Grid() {
   const [users, setUsers] = useState<any[]>([]);
+  const [picks, setPicks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [tapNum, setTapNum] = useState(0);
@@ -20,8 +21,8 @@ export default function Grid() {
 
   const load = async () => {
     try {
-      const [u, t] = await Promise.all([getNearby(), tapsCount()]);
-      setUsers(u); setTapNum(t.count || 0);
+      const [u, t, p] = await Promise.all([getNearby(), tapsCount(), dailyPicks()]);
+      setUsers(u); setTapNum(t.count || 0); setPicks(p);
     } catch (e) { console.log(e); }
     setLoading(false); setRefreshing(false);
   };
@@ -78,6 +79,38 @@ export default function Grid() {
           columnWrapperStyle={{ gap: GAP, paddingHorizontal: GAP }}
           contentContainerStyle={{ gap: GAP, paddingBottom: 100, paddingTop: 4 }}
           refreshControl={<RefreshControl refreshing={refreshing} tintColor={theme.cream} onRefresh={() => { setRefreshing(true); load(); }} />}
+          ListHeaderComponent={picks.length > 0 ? (
+            <View style={styles.picksSection}>
+              <View style={styles.picksHeader}>
+                <Ionicons name="sparkles" size={14} color={theme.cream} />
+                <Text style={styles.picksTitle}>Sugerencias para ti</Text>
+                <Text style={styles.picksDate}>Hoy</Text>
+              </View>
+              <FlatList
+                horizontal
+                data={picks}
+                keyExtractor={(it) => 'pick-' + it.id}
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{ paddingHorizontal: 12, gap: 10 }}
+                renderItem={({ item }) => (
+                  <TouchableOpacity style={styles.pickCard} onPress={() => router.push(`/user/${item.id}`)} activeOpacity={0.85}>
+                    <Image source={{ uri: item.photo }} style={styles.pickImg} />
+                    <LinearGradient colors={['transparent', 'rgba(0,0,0,0.95)']} locations={[0.4, 1]} style={StyleSheet.absoluteFill} />
+                    {item.verified && <View style={styles.verifiedBadge}><Ionicons name="checkmark-circle" size={16} color={theme.blueArrow} /></View>}
+                    <View style={styles.pickInfo}>
+                      <Text style={styles.pickName} numberOfLines={1}>{item.name}, {item.age}</Text>
+                      {item.interests?.length > 0 && (
+                        <Text style={styles.pickInterest} numberOfLines={1}>{item.interests[0]}</Text>
+                      )}
+                    </View>
+                  </TouchableOpacity>
+                )}
+              />
+              <View style={styles.gridLabel}>
+                <Text style={styles.gridLabelText}>CERCA DE TI · {users.length}</Text>
+              </View>
+            </View>
+          ) : null}
           renderItem={({ item }) => (
             <TouchableOpacity
               testID={`user-card-${item.id}`}
@@ -98,7 +131,12 @@ export default function Grid() {
                   <Ionicons name="flash" size={9} color={theme.warmText} />
                 </View>
               )}
-              {item.is_premium && (
+              {item.verified && (
+                <View style={styles.verifiedDot}>
+                  <Ionicons name="checkmark-circle" size={14} color={theme.blueArrow} />
+                </View>
+              )}
+              {item.is_premium && !item.verified && (
                 <View style={styles.premiumDot}>
                   <Ionicons name="diamond" size={9} color={theme.cream} />
                 </View>
@@ -146,4 +184,17 @@ const styles = StyleSheet.create({
   offlineDot: { width: 6, height: 6, borderRadius: 999, backgroundColor: theme.textMuted },
   boostBadge: { position: 'absolute', top: 6, left: 6, width: 18, height: 18, borderRadius: 999, backgroundColor: theme.cream, alignItems: 'center', justifyContent: 'center' },
   premiumDot: { position: 'absolute', top: 6, right: 6, width: 18, height: 18, borderRadius: 999, backgroundColor: 'rgba(0,0,0,0.55)', alignItems: 'center', justifyContent: 'center', borderWidth: 0.5, borderColor: theme.cream },
+  verifiedDot: { position: 'absolute', top: 6, right: 6, width: 18, height: 18, borderRadius: 999, backgroundColor: 'rgba(0,0,0,0.55)', alignItems: 'center', justifyContent: 'center' },
+  picksSection: { marginBottom: 14 },
+  picksHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 16, marginBottom: 10, marginTop: 4 },
+  picksTitle: { color: theme.textPrimary, fontSize: 14, fontWeight: '600', flex: 1 },
+  picksDate: { color: theme.cream, fontSize: 11, fontWeight: '700', letterSpacing: 0.8 },
+  pickCard: { width: 140, height: 180, borderRadius: 14, overflow: 'hidden', position: 'relative' },
+  pickImg: { width: '100%', height: '100%' },
+  pickInfo: { position: 'absolute', bottom: 8, left: 10, right: 10 },
+  pickName: { color: theme.textPrimary, fontSize: 14, fontWeight: '600' },
+  pickInterest: { color: theme.cream, fontSize: 11, marginTop: 2 },
+  verifiedBadge: { position: 'absolute', top: 8, right: 8, backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 999, padding: 2 },
+  gridLabel: { paddingHorizontal: 16, marginTop: 18, marginBottom: 4 },
+  gridLabelText: { color: theme.textSecondary, fontSize: 11, fontWeight: '700', letterSpacing: 1.2 },
 });
