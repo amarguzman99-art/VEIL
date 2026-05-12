@@ -1,11 +1,7 @@
 {
   "build": {
     "production": {
-      "ios": {
-        "appleId": "TU_CORREO_DE_APPLE",
-        "ascAppId": "PROXIMAMENTE",
-        "appleTeamId": "PROXIMAMENTE"
-      }
+      "autoIncrement": true
     }
   }
 }
