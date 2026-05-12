@@ -1,0 +1,199 @@
+{
+  "brand_identity": {
+    "name": "VEIL",
+    "concept": "A veil that unveils - mystery being revealed thoughtfully",
+    "vibe": "Cozy, safe, intimate, premium, warm, trustworthy, LGBT-friendly",
+    "anti_patterns": "No harsh neon, no generic purple gradients on white, no center-everything disease, no standard hookup-app grid feeling"
+  },
+  "theme": "dark",
+  "archetype": "Archetype 5 (Jewel & Luxury) infused with Warm Intimacy",
+  "colors": {
+    "background_base": "#0B0811",
+    "surface_1": "#16121E",
+    "surface_2": "#211B2C",
+    "surface_glass": "rgba(22, 18, 30, 0.7)",
+    "brand_violet": "#8544B5",
+    "cta_primary_warm": "#D87D64",
+    "cta_primary_text": "#FFF2EC",
+    "text_primary": "#F2EFF5",
+    "text_secondary": "#A09CA6",
+    "premium_blue_arrows": "#4D9EE0",
+    "premium_glow": "#D4AF37",
+    "danger": "#E55B5B",
+    "border_subtle": "rgba(255, 255, 255, 0.05)"
+  },
+  "typography": {
+    "heading_font": "Outfit",
+    "body_font": "Manrope",
+    "scales": {
+      "h1": { "fontSize": 40, "lineHeight": 44, "fontWeight": "300", "letterSpacing": -1.5 },
+      "h2": { "fontSize": 32, "lineHeight": 36, "fontWeight": "400", "letterSpacing": -1 },
+      "h3": { "fontSize": 24, "lineHeight": 28, "fontWeight": "500", "letterSpacing": -0.5 },
+      "body_large": { "fontSize": 18, "lineHeight": 26, "fontWeight": "400" },
+      "body_base": { "fontSize": 16, "lineHeight": 24, "fontWeight": "400" },
+      "label_small": { "fontSize": 12, "lineHeight": 16, "fontWeight": "700", "textTransform": "uppercase", "letterSpacing": 1.2 }
+    }
+  },
+  "spacing_and_layout": {
+    "padding_system": {
+      "xs": 4,
+      "sm": 8,
+      "md": 16,
+      "lg": 24,
+      "xl": 32,
+      "xxl": 48
+    },
+    "grid": {
+      "columns": 2,
+      "gap": 12,
+      "margin_horizontal": 16,
+      "card_aspect_ratio": "3:4"
+    },
+    "border_radii": {
+      "sm": 8,
+      "md": 16,
+      "lg": 24,
+      "pill": 999
+    }
+  },
+  "components": {
+    "buttons": {
+      "primary": {
+        "backgroundColor": "#D87D64",
+        "borderRadius": 24,
+        "paddingVertical": 16,
+        "paddingHorizontal": 32,
+        "alignItems": "center",
+        "justifyContent": "center",
+        "shadowColor": "#D87D64",
+        "shadowOffset": { "width": 0, "height": 8 },
+        "shadowOpacity": 0.2,
+        "shadowRadius": 16
+      },
+      "secondary_glass": {
+        "backgroundColor": "rgba(255,255,255,0.05)",
+        "borderRadius": 24,
+        "borderWidth": 1,
+        "borderColor": "rgba(255,255,255,0.1)",
+        "paddingVertical": 16,
+        "alignItems": "center"
+      }
+    },
+    "inputs": {
+      "backgroundColor": "#16121E",
+      "borderRadius": 16,
+      "padding": 16,
+      "color": "#F2EFF5",
+      "borderWidth": 1,
+      "borderColor": "transparent",
+      "focusState": {
+        "borderColor": "#8544B5",
+        "backgroundColor": "#211B2C"
+      }
+    },
+    "cards": {
+      "user_card": {
+        "borderRadius": 16,
+        "overflow": "hidden",
+        "backgroundColor": "#16121E"
+      },
+      "interest_tag": {
+        "backgroundColor": "#211B2C",
+        "borderRadius": 999,
+        "paddingVertical": 6,
+        "paddingHorizontal": 12,
+        "borderWidth": 1,
+        "borderColor": "rgba(255,255,255,0.05)"
+      }
+    },
+    "chat_bubbles": {
+      "sender": {
+        "backgroundColor": "#D87D64",
+        "borderBottomRightRadius": 4,
+        "borderTopRightRadius": 20,
+        "borderTopLeftRadius": 20,
+        "borderBottomLeftRadius": 20
+      },
+      "receiver": {
+        "backgroundColor": "#211B2C",
+        "borderBottomLeftRadius": 4,
+        "borderTopRightRadius": 20,
+        "borderTopLeftRadius": 20,
+        "borderBottomRightRadius": 20
+      }
+    },
+    "tap_badges": {
+      "backgroundColor": "#16121E",
+      "borderRadius": 999,
+      "padding": 12,
+      "borderWidth": 1,
+      "borderColor": "rgba(255,255,255,0.1)",
+      "shadowColor": "#000",
+      "shadowOffset": { "width": 0, "height": 4 },
+      "shadowOpacity": 0.3
+    }
+  },
+  "screens": {
+    "Onboarding": {
+      "layout": "Full screen background image (veil texture) with linear gradient overlay (transparent to #0B0811). Bottom-heavy content: Logo, 'A veil that unveils', age verification checkbox, and Primary enter button."
+    },
+    "Grid_Feed": {
+      "layout": "Sticky glassmorphic header with logo and 'Premium' toggle. 2-column masonry or flex-wrap grid. User cards use 3:4 aspect ratio. Names and distance overlay at the bottom of the card using a smooth gradient (#000000 at 0% to transparent). Generous 12px gaps."
+    },
+    "User_Profile": {
+      "layout": "Immersive image taking top 60% of screen. Content overlays starting at 50% height with a glassmorphic sheet (borderTopLeftRadius: 32, borderTopRightRadius: 32). Basic info: Name, Age, Bio. Horizontal scroll for 'Common Interests' tags. Fixed bottom container with 'Free Chat' and 'TAP' primary action buttons."
+    },
+    "Chat": {
+      "layout": "Header with user mini-avatar and name. Scrollable message list. Message input at bottom with blurred background. 'Blue Arrows' read receipt indicator embedded inside or below sender bubbles for Premium users only."
+    },
+    "TAP_Zone": {
+      "layout": "Horizontal carousel of nearby users. Large circular avatars. Below avatar, a row of quick non-verbal interaction badges (Wave, Flame, Drink) that scale up on tap."
+    },
+    "Premium_Screens": {
+      "layout": "Focus on the Violet Diamond logo with subtle gold (#D4AF37) glowing outlines. Lists premium features: Read Receipts (Blue Arrows), Advanced Filters, See Who Tapped You. CTA uses a shimmering animation."
+    }
+  },
+  "motion": {
+    "screen_transitions": "Fade-through-black or smooth blur reveals (unveiling effect). Avoid harsh slides.",
+    "micro_interactions": "Spring animations on buttons and tap badges (scale down to 0.95 on press). Haptic feedback on all interactions.",
+    "veil_effect": "When revealing a photo or opening a premium feature, use an opacity + blur transition to mimic lifting a veil."
+  },
+  "accessibility": {
+    "contrast": "Maintain WCAG AA on all text. Text over images MUST have a gradient overlay under it.",
+    "motion": "Respect prefers-reduced-motion in React Native Reanimated settings.",
+    "touch_targets": "Minimum 48x48px for all interactable elements (buttons, tags, back icons)."
+  },
+  "media": {
+    "image_urls": [
+      {
+        "url": "https://images.unsplash.com/photo-1760224254117-7a40f7f03fe2?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzNzl8MHwxfHNlYXJjaHwxfHxhYnN0cmFjdCUyMGRhcmslMjBwdXJwbGUlMjBzaWxrJTIwdGV4dHVyZXxlbnwwfHx8fDE3Nzg2MTAxMjR8MA&ixlib=rb-4.1.0&q=85",
+        "category": "background",
+        "description": "Abstract dark purple silk texture - use for Onboarding background and Veil branding elements."
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1767481626894-bab78ae919be?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NTYxODF8MHwxfHNlYXJjaHwxfHxnbG93aW5nJTIwdmlvbGV0JTIwZGlhbW9uZCUyMGRhcmslMjBiYWNrZ3JvdW5kfGVufDB8fHx8MTc3ODYxMDEyNHww&ixlib=rb-4.1.0&q=85",
+        "category": "logo_reference",
+        "description": "Glowing violet diamond on dark background - use as inspiration for the app icon and premium screen graphics."
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1628784962048-06b620cfcf45?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NTYxOTF8MHwxfHNlYXJjaHwzfHxoYW5kc29tZSUyMGd1eSUyMHBvcnRyYWl0JTIwbW9vZHklMjBsaWdodGluZ3xlbnwwfHx8fDE3Nzg2MTAwOTh8MA&ixlib=rb-4.1.0&q=85",
+        "category": "user_profile",
+        "description": "Handsome man portrait moody lighting - use as a placeholder for user profile examples."
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1770894807821-e2e511bf59df?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NTYxOTF8MHwxfHNlYXJjaHwyfHxoYW5kc29tZSUyMGd1eSUyMHBvcnRyYWl0JTIwbW9vZHklMjBsaWdodGluZ3xlbnwwfHx8fDE3Nzg2MTAwOTh8MA&ixlib=rb-4.1.0&q=85",
+        "category": "user_profile",
+        "description": "Handsome man looking away - use as a placeholder for user grid examples."
+      }
+    ]
+  },
+  "instructions_to_main_agent": [
+    "Use React Native StyleSheet or NativeWind. Adapt styling tokens to RN (e.g. paddingHorizontal instead of px).",
+    "Ensure all images have dark linear gradients applied over them before placing text on top.",
+    "Utilize Expo Blur (expo-blur) heavily for glassmorphism to implement the 'veil' aesthetic.",
+    "Do NOT use pure #000000. Use the provided #0B0811 base.",
+    "Implement the 'TAP zone' as a playful, haptic-heavy interaction area.",
+    "Keep chat free but restrict the display of 'premium_blue_arrows' to premium tier logic.",
+    "Add 'data-testid' equivalent (testID in React Native) to all interactive elements for robust testing."
+  ]
+}
