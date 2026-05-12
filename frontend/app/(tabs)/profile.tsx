@@ -10,14 +10,14 @@ const { width } = Dimensions.get('window');
 const PHOTO_SIZE = (width - 40 - 16) / 3;
 
 const INTEREST_GROUPS = [
-  { title: 'Estilo de vida', items: ['☕ Café', '🍷 Vinos', '🥃 Cócteles', '🍽️ Cocina', '🌱 Vegano', '💪 Gym', '🏃 Running', '🧘 Yoga', '🚴 Ciclismo', '🏊 Natación', '⚽ Fútbol', '🎾 Tenis'] },
-  { title: 'Cultura', items: ['📖 Libros', '🎬 Cine', '🎭 Teatro', '🎨 Arte', '📐 Diseño', '🏛️ Museos', '📷 Foto', '📺 Series', '📰 Noticias'] },
-  { title: 'Música', items: ['🎵 Pop', '🎸 Rock', '🎧 Electrónica', '🎤 Indie', '🪩 Disco', '🎼 Clásica', '🎷 Jazz', '💃 Reggaetón', '🪕 Country'] },
-  { title: 'Viajes & Aventura', items: ['✈️ Viajes', '🏔️ Montaña', '🌊 Mar', '🏖️ Playa', '🎒 Mochilero', '🚗 Road trip', '🏕️ Camping'] },
-  { title: 'Vida nocturna', items: ['🌃 Noche', '🍸 Bares', '🪩 Clubbing', '🎉 Fiestas', '🎰 Casino', '🥳 Eventos'] },
-  { title: 'Hogar & Personal', items: ['🐕 Perros', '🐈 Gatos', '🌿 Plantas', '🎮 Gaming', '🧩 Puzzles', '🛍️ Moda', '💇 Estilo', '🛋️ Hogar'] },
-  { title: 'Profesional', items: ['💼 Negocios', '💻 Tech', '🎓 Estudiante', '🧪 Ciencia', '⚖️ Ley', '🩺 Salud', '🎬 Creativo'] },
-  { title: 'Conexión', items: ['💜 Romance', '🤝 Amistad', '☕ Café & charla', '🍿 Netflix & chill', '🚶 Paseos', '🎯 Citas reales'] },
+  { title: 'Estilo de vida', items: ['☕ Café', '🍷 Vinos', '🥃 Cócteles', '🍽️ Cocina', '🌱 Vegano', '💪 Gym', '🏃 Running', '🧘 Yoga', '🚴 Ciclismo', '🏊 Natación', '⚽ Fútbol', '🎾 Tenis', '🥊 Boxeo'] },
+  { title: 'Cultura', items: ['📖 Libros', '🎬 Cine', '🎭 Teatro', '🎨 Arte', '📐 Diseño', '🏛️ Museos', '📷 Foto', '📺 Series', '📰 Noticias', '🎙️ Podcasts'] },
+  { title: 'Música', items: ['🎵 Pop', '🎸 Rock', '🎧 Electrónica', '🎤 Indie', '🪩 Disco', '🎼 Clásica', '🎷 Jazz', '💃 Reggaetón', '🪕 Country', '🎺 Latin'] },
+  { title: 'Viajes & Aventura', items: ['✈️ Viajes', '🏔️ Montaña', '🌊 Mar', '🏖️ Playa', '🎒 Mochilero', '🚗 Road trip', '🏕️ Camping', '🛳️ Cruceros'] },
+  { title: 'Vida nocturna', items: ['🌃 Noche', '🍸 Bares', '🪩 Clubbing', '🎉 Fiestas', '🎰 Casino', '🥳 Eventos', '🎤 Karaoke', '🍹 Brunch'] },
+  { title: 'Hogar & Personal', items: ['🐕 Perros', '🐈 Gatos', '🌿 Plantas', '🎮 Gaming', '🧩 Puzzles', '🛍️ Moda', '💇 Estilo', '🛋️ Hogar', '🛁 Spa', '🕯️ Velas'] },
+  { title: 'Profesional', items: ['💼 Negocios', '💻 Tech', '🎓 Estudiante', '🧪 Ciencia', '⚖️ Ley', '🩺 Salud', '🎬 Creativo', '🏗️ Arquitectura'] },
+  { title: 'Conexión', items: ['💜 Romance', '🤝 Amistad', '☕ Café & charla', '🍿 Netflix & chill', '🚶 Paseos', '🎯 Citas reales', '🌈 Pride', '💬 Charlas largas'] },
 ];
 
 export default function Profile() {

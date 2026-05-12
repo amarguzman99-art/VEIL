@@ -412,36 +412,85 @@ DEMO_USERS = [
 @api_router.post("/seed")
 async def seed_demo_users():
     count = await db.users.count_documents({"email": {"$regex": "^demo"}})
-    if count >= len(DEMO_USERS):
-        return {"seeded": False, "existing": count}
+    has_review = await db.users.find_one({"email": "review@veil.app"})
+
     inserted = 0
     now = datetime.now(timezone.utc)
-    for i, d in enumerate(DEMO_USERS):
-        email = f"demo{i+1}@veil.app"
-        if await db.users.find_one({"email": email}):
-            continue
-        # Random location near Madrid centro
-        lat = 40.4168 + random.uniform(-0.08, 0.08)
-        lon = -3.7038 + random.uniform(-0.08, 0.08)
-        # Last active in last 60 minutes (most online)
-        minutes_ago = random.choices([1, 5, 15, 30, 60, 180, 720], weights=[20, 25, 20, 15, 10, 7, 3])[0]
-        last_active = (now - timedelta(minutes=minutes_ago)).isoformat()
-        is_boosted = random.random() < 0.15
-        boost_until = (now + timedelta(minutes=random.randint(5, 55))).isoformat() if is_boosted else None
+
+    # Ensure App Review demo account exists (idempotent, Premium-enabled per Apple Guideline)
+    review_uid = None
+    if has_review:
+        review_uid = has_review["id"]
+        # Always reset password to documented value
+        await db.users.update_one({"id": review_uid}, {"$set": {
+            "password_hash": hash_pw("AppReview2026!"),
+            "is_premium": True,
+            "name": "App Review",
+            "age": 30,
+        }})
+    else:
+        review_uid = str(uuid.uuid4())
         await db.users.insert_one({
-            "id": str(uuid.uuid4()),
-            "email": email, "password_hash": hash_pw("DemoPass123"),
-            "name": d["name"], "age": d["age"], "bio": d["bio"],
-            "photo": d["photo"], "photos": [d["photo"]],
-            "interests": d["interests"],
-            "latitude": lat, "longitude": lon,
-            "is_premium": random.random() < 0.2,
-            "blocked": [], "boost_until": boost_until,
-            "last_active": last_active,
-            "created_at": now.isoformat(),
+            "id": review_uid,
+            "email": "review@veil.app",
+            "password_hash": hash_pw("AppReview2026!"),
+            "name": "App Review", "age": 30,
+            "bio": "Cuenta de demostración para Apple App Review.",
+            "photo": None, "photos": [], "interests": ["📱 Tech"],
+            "latitude": 40.4168, "longitude": -3.7038,
+            "is_premium": True, "blocked": [], "boost_until": None,
+            "last_active": now.isoformat(), "created_at": now.isoformat(),
         })
-        inserted += 1
-    return {"seeded": True, "inserted": inserted}
+
+    if count < len(DEMO_USERS):
+        for i, d in enumerate(DEMO_USERS):
+            email = f"demo{i+1}@veil.app"
+            if await db.users.find_one({"email": email}):
+                continue
+            lat = 40.4168 + random.uniform(-0.08, 0.08)
+            lon = -3.7038 + random.uniform(-0.08, 0.08)
+            minutes_ago = random.choices([1, 5, 15, 30, 60, 180, 720], weights=[20, 25, 20, 15, 10, 7, 3])[0]
+            last_active = (now - timedelta(minutes=minutes_ago)).isoformat()
+            is_boosted = random.random() < 0.15
+            boost_until = (now + timedelta(minutes=random.randint(5, 55))).isoformat() if is_boosted else None
+            await db.users.insert_one({
+                "id": str(uuid.uuid4()),
+                "email": email, "password_hash": hash_pw("DemoPass123"),
+                "name": d["name"], "age": d["age"], "bio": d["bio"],
+                "photo": d["photo"], "photos": [d["photo"]],
+                "interests": d["interests"],
+                "latitude": lat, "longitude": lon,
+                "is_premium": random.random() < 0.2,
+                "blocked": [], "boost_until": boost_until,
+                "last_active": last_active,
+                "created_at": now.isoformat(),
+            })
+            inserted += 1
+
+    # Auto-generate 10 received TAPs for review account if it has none (for App Review UX demo)
+    review_taps = await db.taps.count_documents({"to_user_id": review_uid})
+    if review_taps < 5:
+        demo_senders = await db.users.find({"email": {"$regex": "^demo"}}, {"_id": 0, "id": 1}).to_list(50)
+        tap_types = ["flame", "wave", "heart", "eye", "kiss", "drink"]
+        for sender in random.sample(demo_senders, min(10, len(demo_senders))):
+            await db.taps.insert_one({
+                "id": str(uuid.uuid4()),
+                "from_user_id": sender["id"],
+                "to_user_id": review_uid,
+                "tap_type": random.choice(tap_types),
+                "created_at": (now - timedelta(minutes=random.randint(1, 180))).isoformat(),
+            })
+
+    # Cleanup: remove any stale users with empty/no photo and generic test names (Apple visual quality)
+    await db.users.delete_many({
+        "$and": [
+            {"email": {"$not": {"$regex": "^(demo|review)"}}},
+            {"$or": [{"photo": None}, {"photo": ""}]},
+            {"name": {"$regex": "^(Test|Guzman|Alex|App Review)$", "$options": "i"}}
+        ]
+    })
+
+    return {"seeded": True, "inserted": inserted, "review_account": "review@veil.app"}
 
 
 @api_router.get("/")
