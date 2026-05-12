@@ -7,7 +7,8 @@
     "preview": {
       "distribution": "internal",
       "ios": {
-        "simulator": true
+        "simulator": true,
+        "image": "latest"
       }
     },
     "production": {
@@ -22,11 +23,6 @@
     }
   },
   "submit": {
-    "production": {
-      "ios": {
-        "appleId": "tu@email.com",
-        "ascAppId": "TU_APP_STORE_CONNECT_ID"
-      }
-    }
+    "production": {}
   }
 }
