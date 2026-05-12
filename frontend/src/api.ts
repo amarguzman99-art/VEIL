@@ -64,18 +64,21 @@ export const reportUser = (target_user_id: string, reason: string) =>
 
 export const seed = () => api.post('/seed').then(r => r.data);
 
-// Theme
+// Theme - VEIL: violet + gold mask aesthetic
 export const theme = {
-  bg: '#0B0811',
-  surface1: '#16121E',
-  surface2: '#211B2C',
-  violet: '#8544B5',
-  warm: '#D87D64',
-  warmText: '#FFF2EC',
-  textPrimary: '#F2EFF5',
-  textSecondary: '#A09CA6',
-  blueArrow: '#4D9EE0',
-  gold: '#D4AF37',
-  danger: '#E55B5B',
-  border: 'rgba(255,255,255,0.05)',
+  bg: '#0A0418',
+  surface1: '#160B26',
+  surface2: '#22113A',
+  violet: '#7C3AED',
+  violetDeep: '#5B21B6',
+  violetLight: '#A78BFA',
+  warm: '#F5B642',          // mask gold (primary CTA)
+  warmText: '#1A0E04',
+  gold: '#F5B642',
+  goldGlow: '#FFD27A',
+  textPrimary: '#F8F4FF',
+  textSecondary: '#A89BC0',
+  blueArrow: '#7DD3FC',
+  danger: '#F87171',
+  border: 'rgba(167,139,250,0.12)',
 };

@@ -12,6 +12,7 @@ export default function RootLayout() {
   const segments = useSegments();
   const router = useRouter();
 
+  // Initial bootstrap
   useEffect(() => {
     (async () => {
       try { await seed(); } catch {}
@@ -21,12 +22,18 @@ export default function RootLayout() {
     })();
   }, []);
 
+  // Re-check auth state every time route changes (handles login/register/logout)
   useEffect(() => {
     if (loading) return;
-    const inAuth = segments[0] === '(auth)';
-    if (!authed && !inAuth) router.replace('/(auth)/welcome');
-    else if (authed && inAuth) router.replace('/(tabs)/grid');
-  }, [authed, loading, segments]);
+    (async () => {
+      const t = await AsyncStorage.getItem('veil_token');
+      const isAuthed = !!t;
+      setAuthed(isAuthed);
+      const inAuth = segments[0] === '(auth)';
+      if (!isAuthed && !inAuth) router.replace('/(auth)/welcome');
+      else if (isAuthed && inAuth) router.replace('/(tabs)/grid');
+    })();
+  }, [segments, loading]);
 
   if (loading) {
     return (
