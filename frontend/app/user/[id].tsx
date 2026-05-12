@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, ActivityIndicator, Alert, Dimensions } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { theme, getUser, blockUser, reportUser } from '../../src/api';
+
+const { width: SCREEN_W } = Dimensions.get('window');
 
 export default function UserDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -38,12 +40,31 @@ export default function UserDetail() {
 
   if (!user) return <View style={styles.container}><ActivityIndicator color={theme.warm} style={{ marginTop: 100 }} /></View>;
 
+  const allPhotos = (user.photos && user.photos.length > 0) ? user.photos : (user.photo ? [user.photo] : []);
+
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={{ paddingBottom: 120 }}>
         <View style={styles.hero}>
-          {user.photo ? <Image source={{ uri: user.photo }} style={styles.heroImg} /> : <View style={[styles.heroImg, { backgroundColor: theme.surface2, alignItems: 'center', justifyContent: 'center' }]}><Ionicons name="person" size={80} color={theme.textSecondary} /></View>}
-          <LinearGradient colors={['rgba(0,0,0,0.6)', 'transparent', theme.bg]} locations={[0, 0.3, 1]} style={styles.heroGrad} />
+          {allPhotos.length > 0 ? (
+            <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false} style={styles.heroImg}>
+              {allPhotos.map((p: string, i: number) => (
+                <Image key={i} source={{ uri: p }} style={[styles.heroImg, { width: SCREEN_W }]} />
+              ))}
+            </ScrollView>
+          ) : (
+            <View style={[styles.heroImg, { backgroundColor: theme.surface2, alignItems: 'center', justifyContent: 'center' }]}>
+              <Ionicons name="person" size={80} color={theme.textSecondary} />
+            </View>
+          )}
+          <LinearGradient colors={['rgba(0,0,0,0.6)', 'transparent', theme.bg]} locations={[0, 0.3, 1]} style={styles.heroGrad} pointerEvents="none" />
+          {allPhotos.length > 1 && (
+            <View style={styles.photoDots} pointerEvents="none">
+              {allPhotos.map((_: string, i: number) => (
+                <View key={i} style={styles.photoDot} />
+              ))}
+            </View>
+          )}
           <SafeAreaView edges={['top']} style={styles.heroNav}>
             <TouchableOpacity testID="detail-back-btn" onPress={() => router.back()} style={styles.navBtn}>
               <Ionicons name="chevron-back" size={26} color={theme.textPrimary} />
@@ -105,4 +126,6 @@ const styles = StyleSheet.create({
   chatBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, backgroundColor: theme.warm, paddingVertical: 16, borderRadius: 24 },
   chatBtnText: { color: theme.warmText, fontSize: 16, fontWeight: '600' },
   tapBtn: { width: 56, height: 56, borderRadius: 999, backgroundColor: theme.surface1, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: theme.border },
+  photoDots: { position: 'absolute', top: 10, left: 0, right: 0, flexDirection: 'row', justifyContent: 'center', gap: 4 },
+  photoDot: { width: 24, height: 3, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.6)' },
 });
