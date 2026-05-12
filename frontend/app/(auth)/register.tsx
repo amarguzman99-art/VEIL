@@ -60,7 +60,12 @@ export default function Register() {
             <View style={[styles.checkbox, agree && styles.checkboxOn]}>
               {agree && <Ionicons name="checkmark" size={16} color={theme.warmText} />}
             </View>
-            <Text style={styles.agreeText}>Confirmo que tengo 18+ años y acepto los Términos y la Política de Privacidad.</Text>
+            <Text style={styles.agreeText}>
+              Confirmo que tengo 18+ años y acepto los{' '}
+              <Text onPress={() => router.push('/legal/terms')} style={styles.linkText}>Términos</Text>
+              {' y la '}
+              <Text onPress={() => router.push('/legal/privacy')} style={styles.linkText}>Política de Privacidad</Text>.
+            </Text>
           </TouchableOpacity>
 
           <TouchableOpacity testID="reg-submit" style={[styles.btn, !agree && { opacity: 0.5 }]} onPress={handle} disabled={loading || !agree}>
@@ -84,6 +89,7 @@ const styles = StyleSheet.create({
   checkbox: { width: 22, height: 22, borderRadius: 6, borderWidth: 1.5, borderColor: theme.textSecondary, alignItems: 'center', justifyContent: 'center', marginTop: 2 },
   checkboxOn: { backgroundColor: theme.warm, borderColor: theme.warm },
   agreeText: { color: theme.textSecondary, fontSize: 13, lineHeight: 18, flex: 1 },
+  linkText: { color: theme.cream, fontWeight: '600', textDecorationLine: 'underline' },
   btn: { backgroundColor: theme.warm, borderRadius: 24, paddingVertical: 18, alignItems: 'center', marginTop: 24 },
   btnText: { color: theme.warmText, fontSize: 16, fontWeight: '600' },
 });

@@ -15,8 +15,23 @@ export default function UserDetail() {
 
   const onMore = () => {
     Alert.alert('Opciones', '', [
-      { text: 'Reportar', onPress: async () => { await reportUser(id, 'Inappropriate'); Alert.alert('✓', 'Reporte enviado'); } },
-      { text: 'Bloquear', style: 'destructive', onPress: async () => { await blockUser(id); Alert.alert('✓', 'Usuario bloqueado'); router.back(); } },
+      { text: 'Reportar', onPress: () => {
+        Alert.alert('Reportar a ' + user.name, '¿Cuál es el motivo?', [
+          { text: 'Acoso o abuso', onPress: async () => { await reportUser(id, 'harassment'); Alert.alert('✓', 'Gracias. Revisaremos en 24h.'); } },
+          { text: 'Suplantación / Fake', onPress: async () => { await reportUser(id, 'fake_profile'); Alert.alert('✓', 'Gracias. Revisaremos en 24h.'); } },
+          { text: 'Contenido sexual explícito', onPress: async () => { await reportUser(id, 'explicit_content'); Alert.alert('✓', 'Gracias. Revisaremos en 24h.'); } },
+          { text: 'Spam / Comercial', onPress: async () => { await reportUser(id, 'spam'); Alert.alert('✓', 'Gracias. Revisaremos en 24h.'); } },
+          { text: 'Menor de edad', onPress: async () => { await reportUser(id, 'minor'); Alert.alert('✓', 'Gracias. Acción prioritaria.'); } },
+          { text: 'Otro', onPress: async () => { await reportUser(id, 'other'); Alert.alert('✓', 'Gracias. Revisaremos en 24h.'); } },
+          { text: 'Cancelar', style: 'cancel' },
+        ]);
+      }},
+      { text: 'Bloquear', style: 'destructive', onPress: () => {
+        Alert.alert('Bloquear a ' + user.name, 'No volverás a ver a esta persona ni recibir mensajes suyos.', [
+          { text: 'Cancelar', style: 'cancel' },
+          { text: 'Bloquear', style: 'destructive', onPress: async () => { await blockUser(id); Alert.alert('✓', 'Usuario bloqueado.'); router.back(); } },
+        ]);
+      }},
       { text: 'Cancelar', style: 'cancel' },
     ]);
   };

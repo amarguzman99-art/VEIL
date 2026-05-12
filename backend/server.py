@@ -92,7 +92,23 @@ def haversine(lat1, lon1, lat2, lon2):
     R = 6371
     dLat = math.radians(lat2 - lat1); dLon = math.radians(lon2 - lon1)
     a = math.sin(dLat/2)**2 + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(dLon/2)**2
-    return round(R * 2 * math.atan2(math.sqrt(a), math.sqrt(1-a)), 1)
+    raw = R * 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
+    # Round to nearest 0.5 km for privacy (GDPR + Apple guideline 18)
+    return round(raw * 2) / 2
+
+# Basic prohibited content filter (Apple guideline 4, 26 + community guidelines)
+BLOCKED_TERMS = [
+    "menor", "menores", "child", "minor", "kid",
+    "escort", "escorts", "prostit",
+    "chemsex", "crystal meth",
+    "fuck now", "sex now", "sexo ya",
+    "venta de", "vendo sexo", "by money",
+]
+
+def contains_prohibited(text: str) -> bool:
+    if not text: return False
+    lower = text.lower()
+    return any(term in lower for term in BLOCKED_TERMS)
 
 def user_to_public(u: dict, viewer: Optional[dict] = None) -> dict:
     dist = None
@@ -239,6 +255,25 @@ async def boost(current=Depends(get_current_user)):
 async def send_message(data: MessageCreate, current=Depends(get_current_user)):
     if not await db.users.find_one({"id": data.to_user_id}):
         raise HTTPException(404, "User not found")
+    # Content moderation
+    if contains_prohibited(data.text):
+        await db.reports.insert_one({
+            "id": str(uuid.uuid4()),
+            "from_user_id": "system",
+            "target_user_id": current["id"],
+            "reason": "auto_filter_prohibited",
+            "context": data.text[:200],
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        })
+        raise HTTPException(400, "Tu mensaje contiene términos no permitidos. Revisa las Normas de Comunidad.")
+    # Rate limit: 30 messages per minute (anti-spam)
+    one_min_ago = datetime.now(timezone.utc) - timedelta(minutes=1)
+    recent = await db.messages.count_documents({
+        "from_user_id": current["id"],
+        "created_at": {"$gte": one_min_ago.isoformat()}
+    })
+    if recent >= 30:
+        raise HTTPException(429, "Estás enviando mensajes muy rápido. Inténtalo en un minuto.")
     msg = {
         "id": str(uuid.uuid4()),
         "conversation_id": conv_id(current["id"], data.to_user_id),

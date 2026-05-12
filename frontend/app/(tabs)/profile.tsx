@@ -107,8 +107,28 @@ export default function Profile() {
         {!editing && (
           <View style={styles.menu}>
             <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/premium')}>
-              <Ionicons name="diamond" size={20} color={theme.gold} />
-              <Text style={[styles.menuText, { color: theme.gold }]}>VEIL Premium</Text>
+              <Ionicons name="diamond" size={20} color={theme.cream} />
+              <Text style={[styles.menuText, { color: theme.cream }]}>VEIL Premium</Text>
+              <Ionicons name="chevron-forward" size={18} color={theme.textSecondary} />
+            </TouchableOpacity>
+            <TouchableOpacity testID="profile-safety-btn" style={styles.menuItem} onPress={() => router.push('/legal/safety')}>
+              <Ionicons name="shield-checkmark-outline" size={20} color={theme.success} />
+              <Text style={styles.menuText}>Centro de Seguridad</Text>
+              <Ionicons name="chevron-forward" size={18} color={theme.textSecondary} />
+            </TouchableOpacity>
+            <TouchableOpacity testID="profile-community-btn" style={styles.menuItem} onPress={() => router.push('/legal/community')}>
+              <Ionicons name="people-outline" size={20} color={theme.textPrimary} />
+              <Text style={styles.menuText}>Normas de Comunidad</Text>
+              <Ionicons name="chevron-forward" size={18} color={theme.textSecondary} />
+            </TouchableOpacity>
+            <TouchableOpacity testID="profile-privacy-btn" style={styles.menuItem} onPress={() => router.push('/legal/privacy')}>
+              <Ionicons name="lock-closed-outline" size={20} color={theme.textPrimary} />
+              <Text style={styles.menuText}>Política de Privacidad</Text>
+              <Ionicons name="chevron-forward" size={18} color={theme.textSecondary} />
+            </TouchableOpacity>
+            <TouchableOpacity testID="profile-terms-btn" style={styles.menuItem} onPress={() => router.push('/legal/terms')}>
+              <Ionicons name="document-text-outline" size={20} color={theme.textPrimary} />
+              <Text style={styles.menuText}>Términos de Servicio</Text>
               <Ionicons name="chevron-forward" size={18} color={theme.textSecondary} />
             </TouchableOpacity>
             <TouchableOpacity testID="profile-logout-btn" style={styles.menuItem} onPress={logout}>
