@@ -1,10 +1,32 @@
 {
+  "cli": {
+    "version": ">= 12.0.0",
+    "appVersionSource": "remote"
+  },
   "build": {
+    "preview": {
+      "distribution": "internal",
+      "ios": {
+        "simulator": true
+      }
+    },
     "production": {
+      "autoIncrement": true,
       "ios": {
         "image": "latest"
       },
-      "autoIncrement": true
+      "android": {
+        "image": "latest",
+        "buildType": "apk"
+      }
+    }
+  },
+  "submit": {
+    "production": {
+      "ios": {
+        "appleId": "tu@email.com",
+        "ascAppId": "TU_APP_STORE_CONNECT_ID"
+      }
     }
   }
 }
