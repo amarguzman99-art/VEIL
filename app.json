@@ -1,37 +1,18 @@
+{
   "expo": {
     "name": "Veil",
     "slug": "veil-dating-app",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "dark",
-    "splash": {
-      "image": "./assets/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#08070D"
-    },
+    "scheme": "veil",
     "ios": {
       "bundleIdentifier": "com.amarguzman.veil",
-      "supportsTablet": false,
-      "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
-      }
+      "supportsTablet": false
     },
     "android": {
-      "package": "com.amarguzman.veil",
-      "adaptiveIcon": {
-        "backgroundColor": "#08070D"
-      },
-      "permissions": ["POST_NOTIFICATIONS"]
+      "package": "com.amarguzman.veil"
     },
-    "web": {
-      "bundler": "metro",
-      "output": "static"
-    },
-    "plugins": [
-      "expo-router"
-    ],
-    "scheme": "veil",
     "extra": {
       "eas": {
         "projectId": "7343e0d8-1425-4279-8808-7243e866a9d4"
