@@ -62,23 +62,33 @@ export const blockUser = (target_user_id: string) =>
 export const reportUser = (target_user_id: string, reason: string) =>
   api.post('/report', { target_user_id, reason }).then(r => r.data);
 
+export const tapsCount = () => api.get('/taps/count').then(r => r.data);
+export const activateBoost = () => api.post('/boost/activate').then(r => r.data);
+
 export const seed = () => api.post('/seed').then(r => r.data);
 
-// Theme - VEIL: violet + gold mask aesthetic
+// Theme - VEIL: deep violet + cream/champagne elegance
 export const theme = {
-  bg: '#0A0418',
-  surface1: '#160B26',
-  surface2: '#22113A',
+  bg: '#080412',
+  bgDeep: '#050208',
+  surface1: '#120821',
+  surface2: '#1C0F30',
+  surface3: '#2A1745',
   violet: '#7C3AED',
-  violetDeep: '#5B21B6',
+  violetDeep: '#3B1273',
+  violetMid: '#5B21B6',
   violetLight: '#A78BFA',
-  warm: '#F5B642',          // mask gold (primary CTA)
+  warm: '#E8D9B8',          // cream/champagne (primary CTA)
   warmText: '#1A0E04',
-  gold: '#F5B642',
-  goldGlow: '#FFD27A',
+  gold: '#D4B886',
+  goldGlow: '#F0E0BC',
+  cream: '#F5EBD6',
   textPrimary: '#F8F4FF',
   textSecondary: '#A89BC0',
+  textMuted: '#6B5C82',
   blueArrow: '#7DD3FC',
   danger: '#F87171',
+  success: '#4ADE80',
   border: 'rgba(167,139,250,0.12)',
+  glassDark: 'rgba(18,8,33,0.7)',
 };
