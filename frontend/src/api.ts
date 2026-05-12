@@ -69,28 +69,28 @@ export const dailyPicks = () => api.get('/users/daily-picks').then(r => r.data);
 
 export const seed = () => api.post('/seed').then(r => r.data);
 
-// Theme - VEIL: deep violet + cream/champagne elegance
+// Theme - VEIL: deep emerald + gold elegance
 export const theme = {
-  bg: '#080412',
-  bgDeep: '#050208',
-  surface1: '#120821',
-  surface2: '#1C0F30',
-  surface3: '#2A1745',
-  violet: '#7C3AED',
-  violetDeep: '#3B1273',
-  violetMid: '#5B21B6',
-  violetLight: '#A78BFA',
-  warm: '#E8D9B8',          // cream/champagne (primary CTA)
-  warmText: '#1A0E04',
+  bg: '#0A2620',
+  bgDeep: '#061814',
+  surface1: '#0F2E27',
+  surface2: '#143A30',
+  surface3: '#1A4A3D',
+  violet: '#1F5A48',          // legacy compat (now emerald accent)
+  violetDeep: '#0F3A2E',
+  violetMid: '#175040',
+  violetLight: '#2E7A60',
+  warm: '#E8D9B8',
+  warmText: '#1A1408',
   gold: '#D4B886',
   goldGlow: '#F0E0BC',
-  cream: '#F5EBD6',
-  textPrimary: '#F8F4FF',
-  textSecondary: '#A89BC0',
-  textMuted: '#6B5C82',
-  blueArrow: '#7DD3FC',
-  danger: '#F87171',
-  success: '#4ADE80',
-  border: 'rgba(167,139,250,0.12)',
-  glassDark: 'rgba(18,8,33,0.7)',
+  cream: '#E8D9B8',
+  textPrimary: '#F8F4ED',
+  textSecondary: '#A8AFA0',
+  textMuted: '#6B7567',
+  blueArrow: '#7DD3C0',
+  danger: '#E07060',
+  success: '#5ABE94',
+  border: 'rgba(212,184,134,0.15)',
+  glassDark: 'rgba(15,46,39,0.7)',
 };
