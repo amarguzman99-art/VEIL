@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "VEIL",
-    "slug": "veil",
+    "name": "Veil - Citas y encuentros",
+    "slug": "veil-citas",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -10,19 +10,22 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.amarguzman.veil",
+      "bundleIdentifier": "com.veildating.social",
+      "buildNumber": "1",
       "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "Encuentra personas cercanas",
+        "CFBundleDisplayName": "Veil",
+        "NSLocationWhenInUseUsageDescription": "Encuentra personas cerca de ti",
         "NSCameraUsageDescription": "Toma fotos para tu perfil",
         "NSPhotoLibraryUsageDescription": "Elige fotos para tu perfil",
         "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
-      "package": "com.amarguzman.veil",
+      "package": "com.veildating.social",
+      "versionCode": 1,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#0B0811"
+        "backgroundColor": "#0A2620"
       },
       "edgeToEdgeEnabled": true,
       "permissions": ["ACCESS_COARSE_LOCATION", "ACCESS_FINE_LOCATION", "CAMERA", "READ_EXTERNAL_STORAGE"]
@@ -40,7 +43,7 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 240,
           "resizeMode": "contain",
-          "backgroundColor": "#0A0418"
+          "backgroundColor": "#0A2620"
         }
       ]
     ],

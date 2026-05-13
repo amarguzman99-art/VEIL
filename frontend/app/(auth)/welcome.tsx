@@ -1,128 +1,151 @@
 import { useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ImageBackground, Image, Dimensions, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Image, Dimensions, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, withSequence, Easing } from 'react-native-reanimated';
+import Animated, {
+  useSharedValue, useAnimatedStyle, withRepeat, withTiming, withSequence, withDelay, Easing,
+} from 'react-native-reanimated';
 import { theme } from '../../src/api';
 
-const { width } = Dimensions.get('window');
-const LOGO = width * 0.58;
+const { width, height } = Dimensions.get('window');
+const HERO_SIZE = width; // square hero (image is 1:1)
 const SERIF = Platform.select({ ios: 'Georgia', android: 'serif', default: 'Georgia' });
+
+// Drifting smoke layer (synthetic atmospheric movement)
+function SmokeLayer({
+  delay = 0, duration = 9000, top, left, size, tint = 'rgba(212,184,134,0.10)', opacity = 1
+}: { delay?: number; duration?: number; top: number; left: number; size: number; tint?: string; opacity?: number }) {
+  const drift = useSharedValue(0);
+  const breathe = useSharedValue(0);
+
+  useEffect(() => {
+    drift.value = withDelay(delay, withRepeat(withSequence(
+      withTiming(1, { duration, easing: Easing.inOut(Easing.quad) }),
+      withTiming(0, { duration, easing: Easing.inOut(Easing.quad) })
+    ), -1));
+    breathe.value = withDelay(delay, withRepeat(withSequence(
+      withTiming(1, { duration: duration * 0.7, easing: Easing.inOut(Easing.quad) }),
+      withTiming(0, { duration: duration * 0.7, easing: Easing.inOut(Easing.quad) })
+    ), -1));
+  }, []);
+
+  const animStyle = useAnimatedStyle(() => ({
+    transform: [
+      { translateX: -40 + drift.value * 80 },
+      { translateY: -30 + breathe.value * 60 },
+      { scale: 1 + breathe.value * 0.22 },
+    ],
+    opacity: opacity * (0.35 + drift.value * 0.55),
+  }));
+
+  return (
+    <Animated.View pointerEvents="none" style={[{ position: 'absolute', top, left, width: size, height: size, borderRadius: size }, animStyle]}>
+      <LinearGradient
+        colors={[tint, 'rgba(0,0,0,0)']}
+        style={{ width: '100%', height: '100%', borderRadius: size }}
+      />
+    </Animated.View>
+  );
+}
 
 export default function Welcome() {
   const router = useRouter();
-  const pulse = useSharedValue(1);
-  const float = useSharedValue(0);
   const fadeIn = useSharedValue(0);
-  const halo = useSharedValue(0);
+  const heroScale = useSharedValue(1);
 
   useEffect(() => {
-    fadeIn.value = withTiming(1, { duration: 1400 });
-    pulse.value = withRepeat(withSequence(withTiming(1.025, { duration: 3200, easing: Easing.inOut(Easing.quad) }), withTiming(1, { duration: 3200, easing: Easing.inOut(Easing.quad) })), -1);
-    float.value = withRepeat(withSequence(withTiming(-5, { duration: 4000, easing: Easing.inOut(Easing.quad) }), withTiming(5, { duration: 4000, easing: Easing.inOut(Easing.quad) })), -1);
-    halo.value = withRepeat(withTiming(1, { duration: 4500, easing: Easing.inOut(Easing.quad) }), -1, true);
+    fadeIn.value = withTiming(1, { duration: 1400, easing: Easing.out(Easing.cubic) });
+    heroScale.value = withRepeat(withSequence(
+      withTiming(1.015, { duration: 5500, easing: Easing.inOut(Easing.quad) }),
+      withTiming(1, { duration: 5500, easing: Easing.inOut(Easing.quad) })
+    ), -1);
   }, []);
 
-  const logoStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: pulse.value }, { translateY: float.value }],
+  const heroStyle = useAnimatedStyle(() => ({
     opacity: fadeIn.value,
-  }));
-  const haloStyle = useAnimatedStyle(() => ({
-    opacity: 0.35 + halo.value * 0.3,
-    transform: [{ scale: 1 + halo.value * 0.12 }],
+    transform: [{ scale: heroScale.value }],
   }));
   const contentStyle = useAnimatedStyle(() => ({ opacity: fadeIn.value }));
 
   return (
     <View style={styles.root}>
-      <ImageBackground
-        source={require('../../assets/images/smoke-bg.jpg')}
+      {/* Emerald gradient that matches the artwork background, so the hero blends seamlessly */}
+      <LinearGradient
+        colors={['#0F3A2E', '#0A2620', '#061814', '#040F0D']}
+        locations={[0, 0.45, 0.8, 1]}
         style={StyleSheet.absoluteFill}
-        resizeMode="cover"
-      >
-        {/* Gradient overlays for depth */}
-        <LinearGradient
-          colors={['rgba(20,58,48,0.5)', 'rgba(10,38,32,0.2)', 'rgba(6,24,20,0.85)']}
-          locations={[0, 0.5, 1]}
-          style={StyleSheet.absoluteFill}
-        />
+      />
 
-        <SafeAreaView style={styles.safe} edges={['top','bottom']}>
-          {/* Top: just the 18+ chip */}
-          <View style={styles.top}>
-            <Text style={styles.brandTop}>V E I L</Text>
-            <View style={styles.ageBadge}><Text style={styles.ageBadgeText}>18+</Text></View>
-          </View>
+      {/* Animated drifting smoke layers (atmospheric) */}
+      <SmokeLayer top={height * 0.08} left={-90} size={280} duration={11000} delay={0}    tint="rgba(255,255,255,0.07)" />
+      <SmokeLayer top={height * 0.32} left={width * 0.55} size={320} duration={13500} delay={2400} tint="rgba(255,245,210,0.06)" />
+      <SmokeLayer top={height * 0.55} left={-70} size={360} duration={15000} delay={1400} tint="rgba(180,210,190,0.06)" />
+      <SmokeLayer top={height * 0.18} left={width * 0.4} size={220} duration={9800}  delay={3700} tint="rgba(212,184,134,0.07)" />
+      <SmokeLayer top={height * 0.74} left={width * 0.35} size={300} duration={12500} delay={2000} tint="rgba(255,255,255,0.05)" />
+      <SmokeLayer top={height * 0.46} left={width * 0.7}  size={240} duration={10500} delay={1800} tint="rgba(212,184,134,0.05)" />
 
-          {/* Centered mask logo with halo */}
-          <View style={styles.middle}>
-            <Animated.View style={[styles.halo, haloStyle]} />
-            <Animated.View style={[styles.haloInner, haloStyle]} />
-            <Animated.View style={[styles.logoWrap, logoStyle]}>
-              <Image source={require('../../assets/images/logo-mark.png')} style={styles.logo} resizeMode="contain" />
-            </Animated.View>
-          </View>
+      <SafeAreaView style={styles.safe} edges={['top','bottom']}>
+        {/* HERO ARTWORK */}
+        <Animated.View style={[styles.heroWrap, heroStyle]}>
+          <Image
+            source={require('../../assets/images/welcome-hero.jpg')}
+            style={{ width: HERO_SIZE, height: HERO_SIZE }}
+            resizeMode="contain"
+          />
+          {/* Soft glow behind */}
+          <View pointerEvents="none" style={styles.heroGlow} />
+        </Animated.View>
 
-          {/* Bottom: tagline + buttons */}
-          <Animated.View style={[styles.bottom, contentStyle]}>
-            <View style={styles.ornamentRow}>
-              <View style={styles.ornamentLine} />
-              <Text style={styles.preTagline}>CITAS · ENCUENTROS · SIN ETIQUETAS</Text>
-              <View style={styles.ornamentLine} />
-            </View>
+        {/* BOTTOM CONTENT */}
+        <Animated.View style={[styles.bottom, contentStyle]}>
+          <Text style={styles.taglineGold}>Más allá de las apariencias…</Text>
+          <Text style={styles.taglineMain}>Una conexión real{'\n'}sin máscaras.</Text>
 
-            <Text style={styles.taglineGold}>Más allá de las apariencias…</Text>
-            <Text style={styles.taglineMain}>Una conexión real{'\n'}sin máscaras.</Text>
-            <Text style={styles.subtitle}>Libera tu esencia, sin filtros, tras el velo.</Text>
+          <TouchableOpacity
+            testID="welcome-register-btn"
+            activeOpacity={0.85}
+            onPress={() => router.push('/(auth)/orientation')}
+          >
+            <LinearGradient
+              colors={['#F0E0BC', '#D4B886', '#A88B4E']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.btnPrimary}
+            >
+              <Text style={styles.btnPrimaryText}>Crear mi velo</Text>
+            </LinearGradient>
+          </TouchableOpacity>
 
-            <TouchableOpacity testID="welcome-register-btn" activeOpacity={0.85} onPress={() => router.push('/(auth)/orientation')}>
-              <LinearGradient
-                colors={['#F0E0BC', '#D4B886', '#A88B4E']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.btnPrimary}
-              >
-                <Text style={styles.btnPrimaryText}>Crear mi velo</Text>
-              </LinearGradient>
-            </TouchableOpacity>
+          <TouchableOpacity
+            testID="welcome-login-btn"
+            style={styles.btnGhost}
+            activeOpacity={0.7}
+            onPress={() => router.push('/(auth)/login')}
+          >
+            <Text style={styles.btnGhostText}>Ya formo parte</Text>
+          </TouchableOpacity>
 
-            <TouchableOpacity testID="welcome-login-btn" style={styles.btnGhost} activeOpacity={0.7} onPress={() => router.push('/(auth)/login')}>
-              <Text style={styles.btnGhostText}>Ya formo parte</Text>
-            </TouchableOpacity>
-
-            <Text style={styles.legal}>
-              Al continuar aceptas tener <Text style={{ color: theme.cream, fontWeight: '700' }}>18+ años</Text>, los Términos y la Política de Privacidad.
-            </Text>
-          </Animated.View>
-        </SafeAreaView>
-      </ImageBackground>
+          <Text style={styles.legal}>
+            Al continuar aceptas tener <Text style={{ color: theme.cream, fontWeight: '700' }}>18+ años</Text>, los Términos y la Política de Privacidad.
+          </Text>
+        </Animated.View>
+      </SafeAreaView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: theme.bg },
-  safe: { flex: 1, paddingHorizontal: 24, justifyContent: 'space-between' },
-  top: { flexDirection: 'row', alignItems: 'center', paddingTop: 14 },
-  brandTop: { color: theme.cream, fontSize: 24, fontFamily: SERIF, letterSpacing: 6, flex: 1, textAlign: 'center', marginLeft: 38 },
-  ageBadge: { borderWidth: 1, borderColor: 'rgba(212,184,134,0.55)', paddingHorizontal: 9, paddingVertical: 3, borderRadius: 999, backgroundColor: 'rgba(10,38,32,0.5)' },
-  ageBadgeText: { color: theme.cream, fontSize: 10, letterSpacing: 1.4, fontWeight: '700' },
-  middle: { flex: 1, alignItems: 'center', justifyContent: 'center', position: 'relative' },
-  halo: { position: 'absolute', width: LOGO * 1.65, height: LOGO * 1.65, borderRadius: 999, backgroundColor: 'rgba(212,184,134,0.18)' },
-  haloInner: { position: 'absolute', width: LOGO * 1.2, height: LOGO * 1.2, borderRadius: 999, backgroundColor: 'rgba(240,224,188,0.12)' },
-  logoWrap: { width: LOGO, height: LOGO, alignItems: 'center', justifyContent: 'center' },
-  logo: { width: '100%', height: '100%' },
-  bottom: { paddingBottom: 8 },
-  ornamentRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 16 },
-  ornamentLine: { flex: 1, height: 1, backgroundColor: 'rgba(212,184,134,0.35)' },
-  preTagline: { color: theme.cream, fontSize: 10, fontWeight: '700', letterSpacing: 2.6 },
-  taglineGold: { color: theme.cream, fontSize: 20, fontFamily: SERIF, fontStyle: 'italic', marginBottom: 6, letterSpacing: -0.3 },
-  taglineMain: { color: theme.textPrimary, fontSize: 34, lineHeight: 40, fontFamily: SERIF, fontWeight: '400', letterSpacing: -1, marginBottom: 14 },
-  subtitle: { color: theme.textSecondary, fontSize: 14.5, lineHeight: 21, marginBottom: 24, fontStyle: 'italic' },
-  btnPrimary: { borderRadius: 999, paddingVertical: 18, alignItems: 'center', marginBottom: 12 },
+  root: { flex: 1, backgroundColor: '#061814' },
+  safe: { flex: 1, justifyContent: 'space-between' },
+  heroWrap: { alignItems: 'center', justifyContent: 'center', marginTop: -8 },
+  heroGlow: { position: 'absolute', width: HERO_SIZE * 0.7, height: HERO_SIZE * 0.7, borderRadius: HERO_SIZE, backgroundColor: 'rgba(212,184,134,0.06)', top: HERO_SIZE * 0.15 },
+  bottom: { paddingHorizontal: 24, paddingBottom: 6 },
+  taglineGold: { color: theme.cream, fontSize: 17, fontFamily: SERIF, fontStyle: 'italic', marginBottom: 4, letterSpacing: -0.2, textAlign: 'center', textShadowColor: 'rgba(0,0,0,0.5)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 6 },
+  taglineMain: { color: theme.textPrimary, fontSize: 28, lineHeight: 33, fontFamily: SERIF, fontWeight: '400', letterSpacing: -0.7, marginBottom: 16, textAlign: 'center', textShadowColor: 'rgba(0,0,0,0.55)', textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 8 },
+  btnPrimary: { borderRadius: 999, paddingVertical: 17, alignItems: 'center', marginBottom: 11 },
   btnPrimaryText: { color: theme.warmText, fontSize: 16, fontWeight: '700', letterSpacing: 0.5 },
-  btnGhost: { backgroundColor: 'rgba(10,38,32,0.4)', borderRadius: 999, paddingVertical: 17, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(212,184,134,0.5)' },
+  btnGhost: { backgroundColor: 'rgba(10,38,32,0.6)', borderRadius: 999, paddingVertical: 16, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(212,184,134,0.55)' },
   btnGhostText: { color: theme.cream, fontSize: 15, fontWeight: '500' },
-  legal: { color: theme.textMuted, fontSize: 10.5, textAlign: 'center', marginTop: 16, lineHeight: 16 },
+  legal: { color: theme.textMuted, fontSize: 10.5, textAlign: 'center', marginTop: 12, lineHeight: 16 },
 });

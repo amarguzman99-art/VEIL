@@ -172,3 +172,12 @@ test_plan:
 agent_communication:
   - agent: "main"
     message: "Orientation flow completed: backend filters /nearby and /daily-picks by current user's looking_for. DEMO_WOMEN seeded. Frontend Welcome + Orientation screens verified via screenshot. End-to-end flow works."
+  - agent: "main"
+    message: |
+      Three premium features added:
+        1) Gifts (Élite): POST /api/gifts/send + 5 gift types (golden_mask, crystal_rose, silk_veil free; emerald_heart, diamond Élite). Animated GiftBubble + gift picker modal in chat.
+        2) Reveal Filter (Privé): GET/POST /api/reveal/{user_id}. Photo veiled with smoke+mask overlay until each side sends >=3 msgs OR premium user reveals manually.
+        3) Profile Preferences: orientation modal in profile tab, 6 options (incl. "busca todo"), saves via PUT /api/profile.
+      Welcome screen redesigned with hero artwork (welcome-hero.jpg) + 6 animated drifting smoke layers (real movement).
+      app.json updated for App Store Connect: name="Veil - Citas y encuentros", bundle="com.veildating.social", display name="Veil".
+      Architecture document created at /app/memory/PLANOS.md.

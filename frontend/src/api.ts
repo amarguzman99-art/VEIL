@@ -69,6 +69,25 @@ export const dailyPicks = () => api.get('/users/daily-picks').then(r => r.data);
 
 export const seed = () => api.post('/seed').then(r => r.data);
 
+// Gifts (Élite tier)
+export const sendGift = (to_user_id: string, gift_type: string) =>
+  api.post('/gifts/send', { to_user_id, gift_type }).then(r => r.data);
+
+// Reveal Filter (Privé tier)
+export const getRevealStatus = (user_id: string) =>
+  api.get(`/reveal/${user_id}`).then(r => r.data);
+export const revealNow = (user_id: string) =>
+  api.post(`/reveal/${user_id}`).then(r => r.data);
+
+// Gift catalog (UI helper)
+export const GIFT_CATALOG = [
+  { id: 'golden_mask',  name: 'Máscara Dorada',  emoji: '🎭', color: '#D4B886', tier: 'free',     subtitle: 'Misterio y elegancia' },
+  { id: 'crystal_rose', name: 'Rosa de Cristal', emoji: '🌹', color: '#F5C2D8', tier: 'free',     subtitle: 'Belleza eterna' },
+  { id: 'silk_veil',    name: 'Velo de Seda',    emoji: '🕊️', color: '#B5C7B7', tier: 'free',     subtitle: 'Suavidad infinita' },
+  { id: 'emerald_heart',name: 'Corazón Esmeralda',emoji: '💚', color: '#5ABE94', tier: 'elite',   subtitle: 'Conexión profunda' },
+  { id: 'diamond',      name: 'Diamante',         emoji: '💎', color: '#B6E8F0', tier: 'elite',   subtitle: 'Lujo absoluto' },
+];
+
 // Theme - VEIL: deep emerald + gold elegance
 export const theme = {
   bg: '#0A2620',

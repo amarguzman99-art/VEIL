@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, TextInput, Alert, ActivityIndicator, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, TextInput, Alert, ActivityIndicator, Dimensions, Modal } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -8,6 +8,21 @@ import { theme, me, updateProfile, clearAuth, deleteAccount } from '../../src/ap
 
 const { width } = Dimensions.get('window');
 const PHOTO_SIZE = (width - 40 - 16) / 3;
+
+const ORIENTATION_OPTIONS = [
+  { id: 'man_seeks_woman',   gender: 'man',   looking: 'woman', label: 'Chico busca chica', emoji: '👨', emoji2: '👩' },
+  { id: 'woman_seeks_man',   gender: 'woman', looking: 'man',   label: 'Chica busca chico', emoji: '👩', emoji2: '👨' },
+  { id: 'man_seeks_man',     gender: 'man',   looking: 'man',   label: 'Chico busca chico', emoji: '👨', emoji2: '👨' },
+  { id: 'woman_seeks_woman', gender: 'woman', looking: 'woman', label: 'Chica busca chica', emoji: '👩', emoji2: '👩' },
+  { id: 'man_seeks_both',    gender: 'man',   looking: 'both',  label: 'Chico busca todo',  emoji: '👨', emoji2: '✨' },
+  { id: 'woman_seeks_both',  gender: 'woman', looking: 'both',  label: 'Chica busca todo',  emoji: '👩', emoji2: '✨' },
+];
+
+const orientationLabel = (gender?: string, looking?: string) => {
+  if (!gender || !looking) return 'No definida';
+  const found = ORIENTATION_OPTIONS.find(o => o.gender === gender && o.looking === looking);
+  return found ? found.label : 'Personalizada';
+};
 
 const PROMPTS_POOL = [
   'Detrás de mi velo hay...',
@@ -44,6 +59,7 @@ export default function Profile() {
   const [prompts, setPrompts] = useState<any[]>([]);
   const [photos, setPhotos] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
+  const [showOrientation, setShowOrientation] = useState(false);
   const router = useRouter();
 
   useFocusEffect(useCallback(() => {
@@ -54,6 +70,16 @@ export default function Profile() {
       setPrompts(u.prompts || []);
     })();
   }, []));
+
+  const saveOrientation = async (gender: string, looking_for: string) => {
+    try {
+      const updated = await updateProfile({ gender, looking_for });
+      setUser({ ...user, ...updated });
+      setShowOrientation(false);
+    } catch (e: any) {
+      Alert.alert('Error', e?.response?.data?.detail || 'No se pudo guardar');
+    }
+  };
 
   const pickPhoto = async (slot: number) => {
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -310,6 +336,14 @@ export default function Profile() {
 
         {!editing && (
           <View style={styles.menu}>
+            <TouchableOpacity testID="profile-preferences-btn" style={styles.menuItem} onPress={() => setShowOrientation(true)}>
+              <Ionicons name="heart-outline" size={20} color={theme.cream} />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.menuText}>Preferencias</Text>
+                <Text style={styles.menuSub}>{orientationLabel(user.gender, user.looking_for)}</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color={theme.textSecondary} />
+            </TouchableOpacity>
             <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/premium')}>
               <Ionicons name="diamond" size={20} color={theme.cream} />
               <Text style={[styles.menuText, { color: theme.cream }]}>VEIL Premium</Text>
@@ -348,6 +382,43 @@ export default function Profile() {
           </View>
         )}
       </ScrollView>
+
+      {/* Orientation preferences modal */}
+      <Modal visible={showOrientation} transparent animationType="slide" onRequestClose={() => setShowOrientation(false)}>
+        <TouchableOpacity activeOpacity={1} style={styles.modalBackdrop} onPress={() => setShowOrientation(false)}>
+          <TouchableOpacity activeOpacity={1} style={styles.modalSheet} onPress={() => {}}>
+            <View style={styles.modalHandle} />
+            <Text style={styles.modalTitle}>Tus preferencias</Text>
+            <Text style={styles.modalSub}>Esto solo afecta a quién verás. Cero etiquetas.</Text>
+            <ScrollView contentContainerStyle={{ gap: 10, paddingBottom: 12 }} showsVerticalScrollIndicator={false}>
+              {ORIENTATION_OPTIONS.map(o => {
+                const selected = user?.gender === o.gender && user?.looking_for === o.looking;
+                return (
+                  <TouchableOpacity
+                    key={o.id}
+                    testID={`pref-${o.id}`}
+                    activeOpacity={0.8}
+                    onPress={() => saveOrientation(o.gender, o.looking)}
+                    style={[styles.orientOption, selected && styles.orientOptionOn]}
+                  >
+                    <View style={styles.orientIconRow}>
+                      <Text style={styles.orientEmoji}>{o.emoji}</Text>
+                      <Ionicons name="heart" size={13} color={selected ? theme.warmText : theme.cream} />
+                      <Text style={styles.orientEmoji}>{o.emoji2}</Text>
+                    </View>
+                    <Text style={[styles.orientLabel, selected && styles.orientLabelOn]}>{o.label}</Text>
+                    {selected && (
+                      <View style={styles.orientCheck}>
+                        <Ionicons name="checkmark" size={14} color={theme.warmText} />
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
     </View>
   );
 }
@@ -385,6 +456,20 @@ const styles = StyleSheet.create({
   menu: { marginHorizontal: 16, marginTop: 24, backgroundColor: theme.surface1, borderRadius: 16, overflow: 'hidden' },
   menuItem: { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 16, borderBottomWidth: 1, borderBottomColor: theme.border },
   menuText: { color: theme.textPrimary, fontSize: 15, flex: 1 },
+  menuSub: { color: theme.textSecondary, fontSize: 11, marginTop: 2 },
+  // Orientation modal
+  modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', justifyContent: 'flex-end' },
+  modalSheet: { backgroundColor: theme.bg, borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 20, paddingBottom: 36, maxHeight: '78%', borderTopWidth: 1, borderColor: theme.border },
+  modalHandle: { width: 40, height: 4, borderRadius: 999, backgroundColor: theme.surface3, alignSelf: 'center', marginBottom: 14 },
+  modalTitle: { color: theme.textPrimary, fontSize: 22, fontWeight: '500', textAlign: 'center', letterSpacing: -0.4 },
+  modalSub: { color: theme.textSecondary, fontSize: 13, textAlign: 'center', marginTop: 4, marginBottom: 16, fontStyle: 'italic' },
+  orientOption: { backgroundColor: theme.surface1, borderRadius: 16, padding: 14, borderWidth: 1, borderColor: theme.border, flexDirection: 'row', alignItems: 'center', gap: 14, position: 'relative' },
+  orientOptionOn: { backgroundColor: theme.cream, borderColor: theme.cream },
+  orientIconRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  orientEmoji: { fontSize: 22 },
+  orientLabel: { color: theme.textPrimary, fontSize: 14, fontWeight: '600', flex: 1 },
+  orientLabelOn: { color: theme.warmText },
+  orientCheck: { width: 24, height: 24, borderRadius: 999, backgroundColor: theme.warmText, alignItems: 'center', justifyContent: 'center' },
   meterWrap: { marginTop: 18, paddingHorizontal: 6 },
   meterHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
   meterLabel: { color: theme.textSecondary, fontSize: 12 },

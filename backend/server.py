@@ -66,6 +66,10 @@ class MessageCreate(BaseModel):
     to_user_id: str
     text: str = Field(..., min_length=1, max_length=2000)
 
+class GiftSend(BaseModel):
+    to_user_id: str
+    gift_type: str = Field(..., pattern="^(golden_mask|crystal_rose|silk_veil|diamond|emerald_heart)$")
+
 class TapCreate(BaseModel):
     to_user_id: str
     tap_type: str = Field(..., pattern="^(wave|flame|drink|heart|kiss|eye)$")
@@ -318,11 +322,85 @@ async def send_message(data: MessageCreate, current=Depends(get_current_user)):
         "conversation_id": conv_id(current["id"], data.to_user_id),
         "from_user_id": current["id"], "to_user_id": data.to_user_id,
         "text": data.text, "read": False,
+        "kind": "text",
         "created_at": datetime.now(timezone.utc).isoformat(),
     }
     await db.messages.insert_one(msg)
     msg.pop("_id", None)
     return msg
+
+
+# ============ Gifts (Élite tier) ============
+GIFT_THRESHOLD_FREE = 3  # free users: up to 3 gifts / 24h
+GIFT_PREMIUM_TYPES = {"diamond", "emerald_heart"}  # premium-only gifts
+
+@api_router.post("/gifts/send")
+async def send_gift(data: GiftSend, current=Depends(get_current_user)):
+    if not await db.users.find_one({"id": data.to_user_id}):
+        raise HTTPException(404, "User not found")
+    # Premium gate on luxury gifts
+    if data.gift_type in GIFT_PREMIUM_TYPES and not current.get("is_premium"):
+        raise HTTPException(402, "Este regalo es exclusivo de VEIL Élite.")
+    # Rate-limit free users (3 gifts / 24h)
+    if not current.get("is_premium"):
+        one_day_ago = datetime.now(timezone.utc) - timedelta(hours=24)
+        sent_today = await db.messages.count_documents({
+            "from_user_id": current["id"], "kind": "gift",
+            "created_at": {"$gte": one_day_ago.isoformat()}
+        })
+        if sent_today >= GIFT_THRESHOLD_FREE:
+            raise HTTPException(429, "Has alcanzado el límite diario de regalos. Mejora a Élite para ilimitados.")
+    msg = {
+        "id": str(uuid.uuid4()),
+        "conversation_id": conv_id(current["id"], data.to_user_id),
+        "from_user_id": current["id"], "to_user_id": data.to_user_id,
+        "text": "", "read": False,
+        "kind": "gift", "gift_type": data.gift_type,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+    await db.messages.insert_one(msg)
+    msg.pop("_id", None)
+    return msg
+
+
+# ============ Reveal Filter (Privé tier) ============
+REVEAL_MESSAGE_THRESHOLD = 3  # each side must send >= 3 messages
+
+async def _reveal_status_for(uid_a: str, uid_b: str) -> dict:
+    cid = conv_id(uid_a, uid_b)
+    a_count = await db.messages.count_documents({"conversation_id": cid, "from_user_id": uid_a})
+    b_count = await db.messages.count_documents({"conversation_id": cid, "from_user_id": uid_b})
+    manual = await db.reveals.find_one({"conversation_id": cid})
+    auto_revealed = a_count >= REVEAL_MESSAGE_THRESHOLD and b_count >= REVEAL_MESSAGE_THRESHOLD
+    manually_revealed = bool(manual)
+    revealed = auto_revealed or manually_revealed
+    return {
+        "revealed": revealed,
+        "auto_revealed": auto_revealed,
+        "manually_revealed": manually_revealed,
+        "my_messages": a_count,
+        "their_messages": b_count,
+        "threshold": REVEAL_MESSAGE_THRESHOLD,
+    }
+
+@api_router.get("/reveal/{user_id}")
+async def get_reveal_status(user_id: str, current=Depends(get_current_user)):
+    return await _reveal_status_for(current["id"], user_id)
+
+@api_router.post("/reveal/{user_id}")
+async def reveal_now(user_id: str, current=Depends(get_current_user)):
+    if not current.get("is_premium"):
+        raise HTTPException(402, "Revelación manual exclusiva de VEIL Privé.")
+    cid = conv_id(current["id"], user_id)
+    existing = await db.reveals.find_one({"conversation_id": cid})
+    if not existing:
+        await db.reveals.insert_one({
+            "id": str(uuid.uuid4()),
+            "conversation_id": cid,
+            "revealed_by": current["id"],
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        })
+    return await _reveal_status_for(current["id"], user_id)
 
 
 @api_router.get("/messages/{user_id}")
