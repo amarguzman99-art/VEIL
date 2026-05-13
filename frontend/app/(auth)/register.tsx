@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, Alert, ActivityIndicator } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { theme, register, saveAuth } from '../../src/api';
 
 export default function Register() {
+  const params = useLocalSearchParams<{ gender?: string; looking_for?: string }>();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
@@ -23,7 +24,7 @@ export default function Register() {
     if (!agree) { Alert.alert('Confirma', 'Debes aceptar los términos y confirmar que tienes 18+'); return; }
     setLoading(true);
     try {
-      const res = await register({ email, password, name, age: ageNum, bio });
+      const res = await register({ email, password, name, age: ageNum, bio, gender: params.gender, looking_for: params.looking_for });
       await saveAuth(res.access_token, res.user);
       router.replace('/onboarding');
     } catch (e: any) {

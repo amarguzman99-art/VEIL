@@ -37,6 +37,8 @@ class UserRegister(BaseModel):
     name: str = Field(..., min_length=1, max_length=50)
     age: int = Field(..., ge=18, le=99)
     bio: Optional[str] = Field(default="", max_length=300)
+    gender: Optional[str] = Field(default=None, pattern="^(man|woman)$")
+    looking_for: Optional[str] = Field(default=None, pattern="^(man|woman|both)$")
 
 class UserLogin(BaseModel):
     email: EmailStr
@@ -48,7 +50,9 @@ class ProfileUpdate(BaseModel):
     photo: Optional[str] = None
     photos: Optional[List[str]] = None
     interests: Optional[List[str]] = None
-    prompts: Optional[List[dict]] = None  # [{question, answer}]
+    prompts: Optional[List[dict]] = None
+    gender: Optional[str] = Field(None, pattern="^(man|woman)$")
+    looking_for: Optional[str] = Field(None, pattern="^(man|woman|both)$")
     latitude: Optional[float] = None
     longitude: Optional[float] = None
     onboarded: Optional[bool] = None
@@ -135,6 +139,8 @@ def user_to_public(u: dict, viewer: Optional[dict] = None) -> dict:
         "interests": u.get("interests", []),
         "prompts": u.get("prompts", []),
         "verified": u.get("verified", False),
+        "gender": u.get("gender"),
+        "looking_for": u.get("looking_for"),
         "distance_km": dist,
         "is_premium": u.get("is_premium", False),
         "is_online": online,
@@ -158,6 +164,7 @@ async def register(data: UserRegister):
     user = {
         "id": uid, "email": data.email.lower(), "password_hash": hash_pw(data.password),
         "name": data.name, "age": data.age, "bio": data.bio or "",
+        "gender": data.gender, "looking_for": data.looking_for,
         "photo": None, "photos": [], "interests": [],
         "latitude": lat, "longitude": lon,
         "is_premium": False, "blocked": [], "boost_until": None,
@@ -224,10 +231,12 @@ async def update_profile(data: ProfileUpdate, current=Depends(get_current_user))
 @api_router.get("/users/nearby")
 async def nearby(current=Depends(get_current_user)):
     blocked = set(current.get("blocked", []))
-    cursor = db.users.find(
-        {"id": {"$ne": current["id"], "$nin": list(blocked)}},
-        {"_id": 0, "password_hash": 0, "email": 0}
-    )
+    query: dict = {"id": {"$ne": current["id"], "$nin": list(blocked)}}
+    # Orientation filter: only show users whose gender matches what current is looking for
+    looking_for = current.get("looking_for")
+    if looking_for and looking_for != "both":
+        query["gender"] = looking_for
+    cursor = db.users.find(query, {"_id": 0, "password_hash": 0, "email": 0})
     users = await cursor.to_list(500)
     results = [user_to_public(u, current) for u in users]
     # Boosted users first, then online, then by distance
@@ -244,10 +253,14 @@ async def daily_picks_endpoint(current=Depends(get_current_user)):
     """3 curated users for today based on common interests + photo + verified."""
     my_interests = set(current.get("interests", []))
     blocked = set(current.get("blocked", []))
-    cursor = db.users.find({
+    query: dict = {
         "id": {"$ne": current["id"], "$nin": list(blocked)},
         "photo": {"$ne": None}
-    }, {"_id": 0, "password_hash": 0, "email": 0})
+    }
+    looking_for = current.get("looking_for")
+    if looking_for and looking_for != "both":
+        query["gender"] = looking_for
+    cursor = db.users.find(query, {"_id": 0, "password_hash": 0, "email": 0})
     all_users = await cursor.to_list(200)
     scored = []
     for u in all_users:
@@ -428,6 +441,24 @@ async def report_user(data: BlockReport, current=Depends(get_current_user)):
 
 
 # ============ Seed (rich demo data) ============
+DEMO_WOMEN = [
+    {"name": "Lucía", "age": 27, "bio": "Café de especialidad y libros que duelen.", "photo": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=600", "interests": ["☕ Café", "📖 Libros", "🎬 Cine"], "gender": "woman", "looking_for": "man"},
+    {"name": "Carmen", "age": 30, "bio": "Bailar hasta que duelan los pies.", "photo": "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=600", "interests": ["💃 Danza", "🎵 Música", "🍷 Vino"], "gender": "woman", "looking_for": "man"},
+    {"name": "Sofía", "age": 25, "bio": "Diseñadora gráfica. Caos creativo.", "photo": "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=600", "interests": ["🎨 Diseño", "📷 Foto", "🌃 Noche"], "gender": "woman", "looking_for": "both"},
+    {"name": "Valeria", "age": 28, "bio": "Yoga al amanecer, vino al anochecer.", "photo": "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=600", "interests": ["🧘 Yoga", "🍷 Vino", "🌿 Plantas"], "gender": "woman", "looking_for": "woman"},
+    {"name": "Elena", "age": 32, "bio": "Arquitecta. Detalles importan.", "photo": "https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=600", "interests": ["🏛️ Arte", "📐 Diseño", "✈️ Viajes"], "gender": "woman", "looking_for": "man"},
+    {"name": "Marta", "age": 26, "bio": "Periodista, cinéfila, fan del jazz.", "photo": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=600", "interests": ["📰 News", "🎬 Cine", "🎷 Jazz"], "gender": "woman", "looking_for": "man"},
+    {"name": "Paula", "age": 29, "bio": "Médica. Cariñosa pero con límites.", "photo": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=600", "interests": ["🩺 Salud", "🌊 Mar", "🐕 Perros"], "gender": "woman", "looking_for": "both"},
+    {"name": "Ana", "age": 31, "bio": "Profesora. Mochilera. Curiosa siempre.", "photo": "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=600", "interests": ["📚 Educar", "🎒 Viajar", "🍵 Té"], "gender": "woman", "looking_for": "man"},
+    {"name": "Irene", "age": 24, "bio": "Pintora y soñadora profesional.", "photo": "https://images.unsplash.com/photo-1502823403499-6ccfcf4fb453?w=600", "interests": ["🎨 Pintar", "🌅 Amaneceres", "🍰 Repostería"], "gender": "woman", "looking_for": "woman"},
+    {"name": "Clara", "age": 28, "bio": "Música clásica + electrónica los findes.", "photo": "https://images.unsplash.com/photo-1463453091185-61582044d556?w=600", "interests": ["🎻 Música", "🎧 DJ", "🍸 Cócteles"], "gender": "woman", "looking_for": "man"},
+    {"name": "Daniela", "age": 33, "bio": "Empresaria. Directa, leal, intensa.", "photo": "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=600", "interests": ["💼 Negocios", "🥂 Vino", "✈️ Viajes"], "gender": "woman", "looking_for": "man"},
+    {"name": "Beatriz", "age": 26, "bio": "Veterinaria. Toda con peludos.", "photo": "https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=600", "interests": ["🐾 Animales", "🌳 Naturaleza", "📚 Lectura"], "gender": "woman", "looking_for": "both"},
+    {"name": "Natalia", "age": 30, "bio": "Chef pastelera. Conquisto con tartas.", "photo": "https://images.unsplash.com/photo-1554151228-14d9def656e4?w=600", "interests": ["🍰 Repostería", "🍷 Vino", "🌱 Huerto"], "gender": "woman", "looking_for": "man"},
+    {"name": "Carolina", "age": 27, "bio": "Bailarina contemporánea. Cuerpo y emoción.", "photo": "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=600", "interests": ["💃 Danza", "🎭 Arte", "🧘 Cuerpo"], "gender": "woman", "looking_for": "woman"},
+    {"name": "Rocío", "age": 29, "bio": "Abogada de día, surfista los findes.", "photo": "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=600", "interests": ["⚖️ Ley", "🏄 Surf", "🌊 Mar"], "gender": "woman", "looking_for": "man"},
+]
+
 DEMO_USERS = [
     {"name": "Mateo", "age": 28, "bio": "Café, libros, cine de autor. Madrid centro.", "photo": "https://images.unsplash.com/photo-1628784962048-06b620cfcf45?w=600", "interests": ["☕ Café", "📖 Libros", "🎬 Cine"]},
     {"name": "Diego", "age": 31, "bio": "Música electrónica, viajes, gym a las 7am.", "photo": "https://images.unsplash.com/photo-1770894807821-e2e511bf59df?w=600", "interests": ["🎵 Música", "✈️ Viajes", "💪 Gym"]},
@@ -470,7 +501,7 @@ DEMO_PROMPTS_POOL = [
 
 @api_router.post("/seed")
 async def seed_demo_users():
-    count = await db.users.count_documents({"email": {"$regex": "^demo"}})
+    count = await db.users.count_documents({"email": {"$regex": "^demo[0-9]"}})
     has_review = await db.users.find_one({"email": "review@veil.app"})
 
     inserted = 0
@@ -486,6 +517,8 @@ async def seed_demo_users():
             "is_premium": True,
             "name": "App Review",
             "age": 30,
+            "gender": "man",
+            "looking_for": "both",
         }})
     else:
         review_uid = str(uuid.uuid4())
@@ -496,6 +529,7 @@ async def seed_demo_users():
             "name": "App Review", "age": 30,
             "bio": "Cuenta de demostración para Apple App Review.",
             "photo": None, "photos": [], "interests": ["📱 Tech"],
+            "gender": "man", "looking_for": "both",
             "latitude": 40.4168, "longitude": -3.7038,
             "is_premium": True, "blocked": [], "boost_until": None,
             "last_active": now.isoformat(), "created_at": now.isoformat(),
@@ -513,6 +547,8 @@ async def seed_demo_users():
             is_boosted = random.random() < 0.15
             boost_until = (now + timedelta(minutes=random.randint(5, 55))).isoformat() if is_boosted else None
             user_prompts = random.sample(DEMO_PROMPTS_POOL, k=random.randint(2, 3))
+            # Original DEMO_USERS are male
+            looking = random.choice(["woman", "man", "both"])
             await db.users.insert_one({
                 "id": str(uuid.uuid4()),
                 "email": email, "password_hash": hash_pw("DemoPass123"),
@@ -521,6 +557,7 @@ async def seed_demo_users():
                 "interests": d["interests"],
                 "prompts": user_prompts,
                 "verified": random.random() < 0.5,
+                "gender": "man", "looking_for": looking,
                 "latitude": lat, "longitude": lon,
                 "is_premium": random.random() < 0.2,
                 "blocked": [], "boost_until": boost_until,
@@ -529,6 +566,49 @@ async def seed_demo_users():
                 "created_at": now.isoformat(),
             })
             inserted += 1
+
+    # Insert DEMO_WOMEN (emails demowN@veil.app)
+    women_count = await db.users.count_documents({"email": {"$regex": "^demow"}})
+    if women_count < len(DEMO_WOMEN):
+        for i, d in enumerate(DEMO_WOMEN):
+            email = f"demow{i+1}@veil.app"
+            if await db.users.find_one({"email": email}):
+                continue
+            lat = 40.4168 + random.uniform(-0.08, 0.08)
+            lon = -3.7038 + random.uniform(-0.08, 0.08)
+            minutes_ago = random.choices([1, 5, 15, 30, 60, 180, 720], weights=[20, 25, 20, 15, 10, 7, 3])[0]
+            last_active = (now - timedelta(minutes=minutes_ago)).isoformat()
+            is_boosted = random.random() < 0.15
+            boost_until = (now + timedelta(minutes=random.randint(5, 55))).isoformat() if is_boosted else None
+            user_prompts = random.sample(DEMO_PROMPTS_POOL, k=random.randint(2, 3))
+            await db.users.insert_one({
+                "id": str(uuid.uuid4()),
+                "email": email, "password_hash": hash_pw("DemoPass123"),
+                "name": d["name"], "age": d["age"], "bio": d["bio"],
+                "photo": d["photo"], "photos": [d["photo"]],
+                "interests": d["interests"],
+                "prompts": user_prompts,
+                "verified": random.random() < 0.6,
+                "gender": d["gender"], "looking_for": d["looking_for"],
+                "latitude": lat, "longitude": lon,
+                "is_premium": random.random() < 0.25,
+                "blocked": [], "boost_until": boost_until,
+                "last_active": last_active,
+                "onboarded": True,
+                "created_at": now.isoformat(),
+            })
+            inserted += 1
+
+    # Backfill gender on existing demo* (men) users that don't have it
+    await db.users.update_many(
+        {"email": {"$regex": "^demo[0-9]"}, "gender": {"$exists": False}},
+        {"$set": {"gender": "man", "looking_for": "woman"}}
+    )
+    # Backfill gender on existing demow users (women) — also set looking_for if missing
+    await db.users.update_many(
+        {"email": {"$regex": "^demow"}, "gender": {"$exists": False}},
+        {"$set": {"gender": "woman", "looking_for": "man"}}
+    )
 
     # Backfill prompts/verified on existing demo users that don't have them
     async for u in db.users.find({"email": {"$regex": "^demo"}, "prompts": {"$exists": False}}):

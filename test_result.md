@@ -101,3 +101,74 @@
 #====================================================================================================
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
+
+user_problem_statement: |
+  VEIL — App de citas premium con identidad esmeralda/dorada, máscaras, sin etiquetas.
+  Última iteración: añadir flujo de selección de orientación (chico busca chica, chica busca chico,
+  chico busca chico, chica busca chica) y filtrar los descubrimientos por esa preferencia.
+
+backend:
+  - task: "Orientation filtering on /api/users/nearby and /api/users/daily-picks"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Verified via curl. Review (looking=both)→60 users. Lucia(woman→man)→46 men 0 women. Valeria(woman→woman)→0 men 14 women. Mateo(man→woman)→0 men 15 women. All filters operate correctly."
+
+  - task: "Seed demo women (DEMO_WOMEN) with gender and looking_for"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Added DEMO_WOMEN list (15 women), seeded successfully. Backfill operations applied to existing demo users. DB now has 45 men + 15 women, all with gender + looking_for."
+
+frontend:
+  - task: "Orientation selection screen between Welcome and Register"
+    implemented: true
+    working: true
+    file: "frontend/app/(auth)/orientation.tsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Screenshot verified. Title '¿Cómo te identificas?' with 4 option cards (chico↔chica, chica↔chico, chico↔chico, chica↔chica). Selection state + gold CTA when chosen. Navigates to register with gender + looking_for params."
+
+  - task: "Welcome screen with centered mask + smoke background"
+    implemented: true
+    working: true
+    file: "frontend/app/(auth)/welcome.tsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Screenshot verified. Centered mask logo with halo, smoke-bg.jpg overlay, V E I L brand at top, 18+ badge, tagline 'Más allá de las apariencias… Una conexión real sin máscaras.', dual CTAs (Crear mi velo / Ya formo parte)."
+
+metadata:
+  created_by: "main_agent"
+  version: "1.1"
+  test_sequence: 1
+  run_ui: false
+
+test_plan:
+  current_focus: []
+  stuck_tasks: []
+  test_all: false
+  test_priority: "high_first"
+
+agent_communication:
+  - agent: "main"
+    message: "Orientation flow completed: backend filters /nearby and /daily-picks by current user's looking_for. DEMO_WOMEN seeded. Frontend Welcome + Orientation screens verified via screenshot. End-to-end flow works."
