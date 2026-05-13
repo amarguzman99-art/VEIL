@@ -10,13 +10,9 @@ import { theme } from '../../src/api';
 
 const { width, height } = Dimensions.get('window');
 const SERIF = Platform.select({ ios: 'Georgia', android: 'serif', default: 'Georgia' });
-const MASK_SIZE = Math.min(width * 0.7, 320);
+const MASK_SIZE = Math.min(width * 0.78, 360);
 
-/**
- * Drifting smoke cloud — pure synthetic, fully animated (translate + scale + opacity)
- * Multiple of these are stacked at different positions/delays to simulate fog moving
- * across the marble background.
- */
+/** Animated drifting smoke cloud (moves diagonally, breathes, rotates) */
 function SmokeCloud({
   startX, startY, endX, endY, size, tint, duration, delay = 0, baseOpacity = 0.55,
 }: {
@@ -64,69 +60,86 @@ export default function Welcome() {
   const fadeIn = useSharedValue(0);
   const maskFloat = useSharedValue(0);
   const halo = useSharedValue(0);
+  const ringRotate = useSharedValue(0);
 
   useEffect(() => {
-    fadeIn.value = withTiming(1, { duration: 1400, easing: Easing.out(Easing.cubic) });
+    fadeIn.value = withTiming(1, { duration: 1600, easing: Easing.out(Easing.cubic) });
     maskFloat.value = withRepeat(withSequence(
-      withTiming(1, { duration: 4500, easing: Easing.inOut(Easing.quad) }),
-      withTiming(0, { duration: 4500, easing: Easing.inOut(Easing.quad) })
+      withTiming(1, { duration: 5000, easing: Easing.inOut(Easing.quad) }),
+      withTiming(0, { duration: 5000, easing: Easing.inOut(Easing.quad) })
     ), -1);
     halo.value = withRepeat(withSequence(
-      withTiming(1, { duration: 3800, easing: Easing.inOut(Easing.quad) }),
-      withTiming(0, { duration: 3800, easing: Easing.inOut(Easing.quad) })
+      withTiming(1, { duration: 4200, easing: Easing.inOut(Easing.quad) }),
+      withTiming(0, { duration: 4200, easing: Easing.inOut(Easing.quad) })
     ), -1);
+    ringRotate.value = withRepeat(withTiming(1, { duration: 60000, easing: Easing.linear }), -1);
   }, []);
 
   const maskStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: -6 + maskFloat.value * 12 }, { scale: 0.98 + maskFloat.value * 0.04 }],
+    transform: [{ translateY: -8 + maskFloat.value * 16 }, { scale: 0.97 + maskFloat.value * 0.05 }],
     opacity: fadeIn.value,
   }));
   const haloStyle = useAnimatedStyle(() => ({
-    opacity: 0.25 + halo.value * 0.45,
-    transform: [{ scale: 0.95 + halo.value * 0.18 }],
+    opacity: 0.18 + halo.value * 0.32,
+    transform: [{ scale: 0.95 + halo.value * 0.16 }],
   }));
-  const contentStyle = useAnimatedStyle(() => ({ opacity: fadeIn.value }));
-  const titleStyle = useAnimatedStyle(() => ({ opacity: fadeIn.value, transform: [{ translateY: (1 - fadeIn.value) * -10 }] }));
+  const haloInnerStyle = useAnimatedStyle(() => ({
+    opacity: 0.10 + halo.value * 0.25,
+    transform: [{ scale: 0.92 + halo.value * 0.10 }],
+  }));
+  const ringStyle = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${ringRotate.value * 360}deg` }],
+    opacity: fadeIn.value * 0.55,
+  }));
+  const contentStyle = useAnimatedStyle(() => ({
+    opacity: fadeIn.value,
+    transform: [{ translateY: (1 - fadeIn.value) * 14 }],
+  }));
 
   return (
     <View style={styles.root}>
-      {/* 1. MARBLE BACKGROUND — real emerald marble with gold veins */}
+      {/* 1. MARBLE TEXTURE — used as subtle luxury background (heavily muted) */}
       <ImageBackground
         source={require('../../assets/images/marble-bg.jpg')}
         style={StyleSheet.absoluteFill}
         resizeMode="cover"
+        imageStyle={{ opacity: 0.32 }}
       >
-        {/* 2. EMERALD TINT — slightly darken & emerald-shift the marble for cohesion */}
+        {/* 2. DEEP EMERALD OVERLAYS — make marble whisper, not shout */}
         <LinearGradient
-          colors={['rgba(15,58,46,0.55)', 'rgba(10,38,32,0.55)', 'rgba(6,24,20,0.85)']}
+          colors={['rgba(6,24,20,0.85)', 'rgba(10,38,32,0.70)', 'rgba(6,24,20,0.95)']}
           locations={[0, 0.5, 1]}
           style={StyleSheet.absoluteFill}
         />
+        {/* Radial vignette to focus center */}
+        <LinearGradient
+          colors={['rgba(6,24,20,0)', 'rgba(4,15,13,0.55)']}
+          style={StyleSheet.absoluteFill}
+          start={{ x: 0.5, y: 0.5 }} end={{ x: 1, y: 1 }}
+        />
 
-        {/* 3. ANIMATED SMOKE — moving across the marble */}
-        <SmokeCloud startX={-120} startY={height * 0.05} endX={width * 0.3} endY={height * 0.20} size={420} tint="rgba(255,255,255,0.13)" duration={14000} delay={0}    baseOpacity={0.55} />
-        <SmokeCloud startX={width * 0.4} startY={height * 0.10} endX={width * 0.8} endY={height * 0.35} size={380} tint="rgba(212,184,134,0.10)" duration={17000} delay={2200} baseOpacity={0.50} />
-        <SmokeCloud startX={-90}  startY={height * 0.40} endX={width * 0.25} endY={height * 0.55} size={480} tint="rgba(180,210,190,0.11)" duration={19000} delay={1500} baseOpacity={0.45} />
-        <SmokeCloud startX={width * 0.5} startY={height * 0.55} endX={width * 0.05} endY={height * 0.75} size={420} tint="rgba(255,245,210,0.10)" duration={15500} delay={3500} baseOpacity={0.45} />
-        <SmokeCloud startX={width * 0.6} startY={height * 0.75} endX={width * 0.2} endY={height * 0.95} size={460} tint="rgba(255,255,255,0.10)" duration={13000} delay={1100} baseOpacity={0.40} />
-        <SmokeCloud startX={-70} startY={height * 0.80} endX={width * 0.5} endY={height * 0.65} size={380} tint="rgba(212,184,134,0.08)" duration={16000} delay={2800} baseOpacity={0.40} />
-        <SmokeCloud startX={width * 0.7} startY={height * 0.30} endX={width * 0.15} endY={height * 0.45} size={340} tint="rgba(255,255,255,0.09)" duration={18000} delay={4200} baseOpacity={0.50} />
+        {/* 3. ANIMATED DRIFTING SMOKE LAYERS */}
+        <SmokeCloud startX={-120} startY={height * 0.05} endX={width * 0.30} endY={height * 0.22} size={420} tint="rgba(255,255,255,0.10)" duration={14000} delay={0}    baseOpacity={0.55} />
+        <SmokeCloud startX={width * 0.45} startY={height * 0.08} endX={width * 0.85} endY={height * 0.34} size={380} tint="rgba(212,184,134,0.10)" duration={17000} delay={2200} baseOpacity={0.45} />
+        <SmokeCloud startX={-90}  startY={height * 0.42} endX={width * 0.25} endY={height * 0.58} size={460} tint="rgba(180,210,190,0.10)" duration={19000} delay={1500} baseOpacity={0.45} />
+        <SmokeCloud startX={width * 0.55} startY={height * 0.55} endX={width * 0.05} endY={height * 0.78} size={420} tint="rgba(255,245,210,0.09)" duration={15500} delay={3500} baseOpacity={0.45} />
+        <SmokeCloud startX={width * 0.65} startY={height * 0.75} endX={width * 0.15} endY={height * 0.95} size={460} tint="rgba(255,255,255,0.09)" duration={13000} delay={1100} baseOpacity={0.40} />
+        <SmokeCloud startX={-70}  startY={height * 0.78} endX={width * 0.5}  endY={height * 0.65} size={380} tint="rgba(212,184,134,0.07)" duration={16000} delay={2800} baseOpacity={0.35} />
 
-        {/* 4. CONTENT */}
         <SafeAreaView style={styles.safe} edges={['top','bottom']}>
-          {/* TOP BAR — VEIL title + 18+ badge */}
-          <Animated.View style={[styles.topBar, titleStyle]}>
-            <View style={{ width: 38 }} />
-            <Text style={styles.brandTop}>V E I L</Text>
+          {/* TOP — ONLY the 18+ badge, subtle and refined */}
+          <View style={styles.topBar}>
             <View style={styles.ageBadge}>
               <Text style={styles.ageBadgeText}>18+</Text>
             </View>
-          </Animated.View>
+          </View>
 
-          {/* MIDDLE — centered mask with golden halo */}
+          {/* MIDDLE — the mask is the absolute hero */}
           <View style={styles.middle}>
+            {/* Subtle rotating gold ring (decorative, far behind) */}
+            <Animated.View style={[styles.goldRing, ringStyle]} />
             <Animated.View style={[styles.haloOuter, haloStyle]} />
-            <Animated.View style={[styles.haloInner, haloStyle]} />
+            <Animated.View style={[styles.haloInner, haloInnerStyle]} />
             <Animated.View style={[styles.maskWrap, maskStyle]}>
               <Image
                 source={require('../../assets/images/logo-mark.png')}
@@ -136,11 +149,17 @@ export default function Welcome() {
             </Animated.View>
           </View>
 
-          {/* BOTTOM — taglines + CTAs + legal */}
+          {/* BOTTOM — minimal, refined typography */}
           <Animated.View style={[styles.bottom, contentStyle]}>
-            <Text style={styles.taglineGold}>Más allá de las apariencias…</Text>
-            <Text style={styles.taglineMain}>Una conexión real{'\n'}sin máscaras.</Text>
-            <Text style={styles.subtitle}>Libera tu esencia, sin filtros, tras el velo.</Text>
+            {/* Tiny gold divider */}
+            <View style={styles.divider}>
+              <View style={styles.dividerLine} />
+              <View style={styles.dividerDot} />
+              <View style={styles.dividerLine} />
+            </View>
+
+            <Text style={styles.taglineMain}>Una conexión real,{'\n'}sin máscaras.</Text>
+            <Text style={styles.taglineSub}>Más allá de las apariencias.</Text>
 
             <TouchableOpacity testID="welcome-register-btn" activeOpacity={0.85} onPress={() => router.push('/(auth)/orientation')}>
               <LinearGradient
@@ -167,32 +186,34 @@ export default function Welcome() {
   );
 }
 
+const RING_SIZE = MASK_SIZE * 1.45;
+
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#061814' },
+  root: { flex: 1, backgroundColor: '#040F0D' },
   safe: { flex: 1, paddingHorizontal: 24, justifyContent: 'space-between' },
 
-  topBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingTop: 14 },
-  brandTop: { color: theme.cream, fontSize: 28, fontFamily: SERIF, letterSpacing: 8, flex: 1, textAlign: 'center' },
-  ageBadge: { borderWidth: 1, borderColor: 'rgba(212,184,134,0.55)', paddingHorizontal: 10, paddingVertical: 3, borderRadius: 999, backgroundColor: 'rgba(10,38,32,0.6)' },
+  topBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', paddingTop: 14 },
+  ageBadge: { borderWidth: 1, borderColor: 'rgba(212,184,134,0.45)', paddingHorizontal: 11, paddingVertical: 4, borderRadius: 999, backgroundColor: 'rgba(10,38,32,0.5)' },
   ageBadgeText: { color: theme.cream, fontSize: 11, letterSpacing: 1.4, fontWeight: '700' },
 
   middle: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  haloOuter: { position: 'absolute', width: MASK_SIZE * 1.65, height: MASK_SIZE * 1.65, borderRadius: 999, backgroundColor: 'rgba(212,184,134,0.18)' },
-  haloInner: { position: 'absolute', width: MASK_SIZE * 1.2, height: MASK_SIZE * 1.2, borderRadius: 999, backgroundColor: 'rgba(240,224,188,0.12)' },
+  goldRing: { position: 'absolute', width: RING_SIZE, height: RING_SIZE, borderRadius: RING_SIZE, borderWidth: 1, borderColor: 'rgba(212,184,134,0.18)', borderStyle: 'solid' },
+  haloOuter: { position: 'absolute', width: MASK_SIZE * 1.75, height: MASK_SIZE * 1.75, borderRadius: 999, backgroundColor: 'rgba(212,184,134,0.10)' },
+  haloInner: { position: 'absolute', width: MASK_SIZE * 1.25, height: MASK_SIZE * 1.25, borderRadius: 999, backgroundColor: 'rgba(240,224,188,0.10)' },
   maskWrap: { width: MASK_SIZE, height: MASK_SIZE, alignItems: 'center', justifyContent: 'center' },
   mask: { width: '100%', height: '100%' },
 
-  ornamentRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 20, paddingHorizontal: 4 },
-  ornamentLine: { flex: 1, height: 1, backgroundColor: 'rgba(212,184,134,0.45)' },
-  ornamentText: { color: theme.cream, fontSize: 10, fontWeight: '700', letterSpacing: 2.6 },
+  bottom: { paddingBottom: 6, alignItems: 'center' },
+  divider: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 18 },
+  dividerLine: { width: 28, height: 1, backgroundColor: 'rgba(212,184,134,0.55)' },
+  dividerDot: { width: 4, height: 4, borderRadius: 999, backgroundColor: theme.cream },
 
-  bottom: { paddingBottom: 6 },
-  taglineGold: { color: theme.cream, fontSize: 18, fontFamily: SERIF, fontStyle: 'italic', marginBottom: 4, letterSpacing: -0.2 },
-  taglineMain: { color: theme.textPrimary, fontSize: 30, lineHeight: 36, fontFamily: SERIF, fontWeight: '400', letterSpacing: -0.8, marginBottom: 10 },
-  subtitle: { color: theme.textSecondary, fontSize: 14, lineHeight: 20, marginBottom: 20, fontStyle: 'italic' },
-  btnPrimary: { borderRadius: 999, paddingVertical: 17, alignItems: 'center', marginBottom: 11 },
+  taglineMain: { color: theme.textPrimary, fontSize: 30, lineHeight: 36, fontFamily: SERIF, fontWeight: '400', letterSpacing: -0.7, marginBottom: 8, textAlign: 'center' },
+  taglineSub: { color: theme.cream, fontSize: 14, fontFamily: SERIF, fontStyle: 'italic', letterSpacing: 0.3, marginBottom: 26, textAlign: 'center', opacity: 0.85 },
+
+  btnPrimary: { borderRadius: 999, paddingVertical: 17, paddingHorizontal: 60, alignItems: 'center', marginBottom: 11, minWidth: width - 48 },
   btnPrimaryText: { color: theme.warmText, fontSize: 16, fontWeight: '700', letterSpacing: 0.5 },
-  btnGhost: { backgroundColor: 'rgba(10,38,32,0.6)', borderRadius: 999, paddingVertical: 16, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(212,184,134,0.55)' },
+  btnGhost: { backgroundColor: 'rgba(10,38,32,0.5)', borderRadius: 999, paddingVertical: 16, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(212,184,134,0.45)', minWidth: width - 48 },
   btnGhostText: { color: theme.cream, fontSize: 15, fontWeight: '500' },
-  legal: { color: theme.textMuted, fontSize: 10.5, textAlign: 'center', marginTop: 12, lineHeight: 16 },
+  legal: { color: theme.textMuted, fontSize: 10.5, textAlign: 'center', marginTop: 14, lineHeight: 16, paddingHorizontal: 8 },
 });
